@@ -22,7 +22,23 @@ After downloading, run each script in a PowerShell session with administrator pr
 
 ## Scripts Overview
 
-### 1. Startup-Script.ps1
+### 1. init.ps1
+
+**Purpose:** This script does some inital hardening:
+  - Changes password
+  - Clears persistence in Registry
+  - Rotates Kerberos password
+  - Downloads and applies GPOs
+
+**Usage:** Download and run:
+
+```bash
+.\init.ps1
+```
+
+---
+
+### 2. Startup-Script.ps1
 **Purpose:** This script performs essential security hardening tasks on Windows systems. It includes functions such as:
   - Synchronizing the system time
   - Changing and renaming the local administrator account
@@ -38,17 +54,6 @@ After downloading, run each script in a PowerShell session with administrator pr
 
 ```bash
 .\Startup-Script.ps1
-```
-
----
-
-### 2. future-script.ps1
-**Purpose:** This is a future script
-
-**Usage:**
-
-```bash
-.\future-script.ps1
 ```
 
 ---
