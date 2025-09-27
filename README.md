@@ -50,22 +50,14 @@ After downloading, run each script in a PowerShell session with administrator pr
   - Downloads and installs ClamAV, a free and open-source antivirus tool. It schedules daily scans for malware protection and updates ClamAV settings to log scan results.
   - Downloads and installs and configures the Wazuh (OSSEC) Agent in local mode for host-based monitoring without an external server connection. This enables basic system monitoring on Windows servers.
 
-**Usage:**
-
-```bash
-.\Startup-Script.ps1
-```
+**Usage:** This script will run automatically on startup after init.ps1 runs
 
 ---
 
-### 3. future-script.ps1
-**Purpose:** This is a future script
+### 3. system-hardening.ps1
+**Purpose:** These scripts perfom hardening on thier respective Windows version
 
-**Usage:**
-
-```bash
-.\future-script.ps1
-```
+**Usage:** This script will run automatically after Startup-Script.ps1 and the corect version will be selected automatically.
 
 ---
 
