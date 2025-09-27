@@ -1,6 +1,6 @@
 # UW-Stout CCDL - Windows Security Scripts
 
-This repository contains a collection of PowerShell scripts designed by the UW-Stout Collegiate Cyber Defense League (CCDL) - Windows Team. Each script automates essential security tasks and configurations for Windows Server environments. These scripts are aimed at improving baseline security and can be used individually or as part of a comprehensive hardening process.
+This repository contains a collection of PowerShell scripts designed by the Cyber@Stout CCDC comptition team. Each script automates essential security tasks and configurations for Windows Server environments. These scripts are aimed at improving baseline security and can be used individually or as part of a comprehensive hardening process.
 
 ***NOTE: This repository is only for development of scripts, and SHOULD AND WILL NOT BE USED during competition, since it will be updated after the cutoff dates. These scripts may also be out of date and broken.***
 
