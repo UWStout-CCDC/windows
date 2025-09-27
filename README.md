@@ -1,6 +1,6 @@
 # Cyber@Stout - Windows Security Scripts
 
-This repository contains a collection of PowerShell scripts designed by the Cyber@Stout CCDC comptition team. Each script automates essential security tasks and configurations for Windows Server environments. These scripts are aimed at improving baseline security and can be used individually or as part of a comprehensive hardening process.
+This repository contains a collection of PowerShell scripts designed by the Cyber@Stout CCDC comptition team. Each script automates essential security tasks and configurations for Windows Server and client environments. These scripts are aimed at improving baseline security and can be used individually or as part of a comprehensive hardening process.
 
 ***NOTE: This repository is only for development of scripts, and SHOULD AND WILL NOT BE USED during competition, since it will be updated after the cutoff dates. These scripts may also be out of date and broken. DO NOT submit this repository to CCDC.***
 
@@ -10,13 +10,14 @@ To run these scripts, simply download the repository or individual scripts using
 
 ```bash
 wget "https://tinyurl.com/4duuewes" -OutFile "Startup-Script.ps1"
-wget "https://tinyurl.com/msc9cyd8" -Outfile "Installs.ps1"
-```
-```bash
-Invoke-WebRequest "https://raw.githubusercontent.com/Baglesrfine/CCDL-Windows/refs/heads/main/Startup-Script.ps1" -OutFile "Startup-Script.ps1"
 ```
 
-After downloading, run each script in a PowerShell session with administrator privileges to ensure all configurations are applied correctly.
+Before running the script, makes sure you have admin privileges and that you set the excution policy with:
+
+```bash
+Set-ExecutionPolicy Unrestricted
+```
+Make sure to set it back to Restricted after running the scripts. All scripts should run after running init.ps1
 
 ---
 
