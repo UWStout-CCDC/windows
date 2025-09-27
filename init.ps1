@@ -6,6 +6,8 @@ Import-Module -Name BitsTransfer
 $Host.UI.RawUI.ForegroundColor = "DarkGreen"
 $Host.UI.RawUI.BackgroundColor = "Black"
 
+$site = "UWStout-CCDC/windows"
+
 # Clear startup items from registry
 $startupRegistryPaths = @(
     "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run",
@@ -130,7 +132,7 @@ mkdir "C:\CCDC\tools-Windows"
 # Set the Startup Script run on start
 $scriptPath = "$toolsPath\Startup-Script.ps1"
 Write-Host "Downloading Startup script..."
-Invoke-WebRequest "https://github.com/Baglesrfine/CCDL-Windows/raw/refs/heads/main/Startup-Script.ps1" -OutFile $scriptPath
+Invoke-WebRequest "https://github.com/$site/raw/refs/heads/main/Startup-Script.ps1" -OutFile $scriptPath
 $entryName = "StartupScript"
 Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name $entryName -Value "powershell.exe -File `"$scriptPath`""
 

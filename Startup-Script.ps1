@@ -6,6 +6,8 @@ Import-Module -Name BitsTransfer
 $Host.UI.RawUI.ForegroundColor = "DarkGreen"
 $Host.UI.RawUI.BackgroundColor = "Black"
 
+$site = "UWStout-CCDC/windows"
+
 # Clear startup items from registry
 $startupRegistryPaths = @(
     "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run",
@@ -96,12 +98,12 @@ $toolsPath = "$ccdcPath\tools-Windows"
 # Download the install script
 $installScriptPath = "$toolsPath\Installs.ps1"
 Write-Host "Downloading install script..."
-Invoke-WebRequest "https://github.com/Baglesrfine/CCDL-Windows/raw/refs/heads/main/Installs.ps1" -OutFile $installScriptPath
+Invoke-WebRequest "https://github.com/$site/raw/refs/heads/main/Installs.ps1" -OutFile $installScriptPath
 
 # Download the update script
 $installScriptPath = "$toolsPath\Win-Update.ps1"
 Write-Host "Downloading install script..."
-Invoke-WebRequest "https://github.com/Baglesrfine/CCDL-Windows/raw/refs/heads/main/Win-Update.ps1" -OutFile $installScriptPath
+Invoke-WebRequest "https://github.com/$site/raw/refs/heads/main/Win-Update.ps1" -OutFile $installScriptPath
 
 # Download necessary tools
 $tools = @(
@@ -152,20 +154,20 @@ if ($productName -eq "Windows Server 2019 Standard") {
         # Download hardening script
         $ScriptPath = "$toolsPath\ad-hardening.ps1"
         Write-Host "Downloading hardening script..."
-        Invoke-WebRequest "https://github.com/Baglesrfine/CCDL-Windows/raw/refs/heads/master/main/ad-hardening.ps1" -OutFile $ScriptPath
+        Invoke-WebRequest "https://github.com/$site/raw/refs/heads/master/main/ad-hardening.ps1" -OutFile $ScriptPath
         & "$toolsPath\ad-hardening.ps1"
     } else {
         # Download hardening script
         $ScriptPath = "$toolsPath\server2019-hardening.ps1"
         Write-Host "Downloading hardening script..."
-        Invoke-WebRequest "https://github.com/Baglesrfine/CCDL-Windows/raw/refs/heads/main/server2019-hardening.ps1" -OutFile $ScriptPath
+        Invoke-WebRequest "https://github.com/$site/raw/refs/heads/main/server2019-hardening.ps1" -OutFile $ScriptPath
         & "$toolsPath\server2019-hardening.ps1"
     }
 }
 else {
     $ScriptPath = "$toolsPath\consumner-windows-hardening.ps1"
     Write-Host "Downloading hardening script..."
-    Invoke-WebRequest "https://github.com/Baglesrfine/CCDL-Windows/raw/refs/heads/main/consumer-windows-hardening.ps1" -OutFile $ScriptPath
+    Invoke-WebRequest "https://github.com/$site/raw/refs/heads/main/consumer-windows-hardening.ps1" -OutFile $ScriptPath
     & "$toolsPath\consumner-windows-hardening.ps1"
 }
 
