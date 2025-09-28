@@ -9,7 +9,7 @@ This repository contains a collection of PowerShell scripts designed by the Cybe
 To run these scripts, simply download the repository or individual scripts using `wget`:
 
 ```bash
-wget "https://tinyurl.com/4duuewes" -OutFile "Startup-Script.ps1"
+wget "https://tinyurl.com/4nv9t38p" -OutFile "init.ps1"
 ```
 
 Before running the script, makes sure you have admin privileges and that you set the excution policy with:
@@ -60,13 +60,3 @@ Make sure to set it back to Restricted after running the scripts. All scripts sh
 
 **Usage:** This script will run automatically after Startup-Script.ps1 and the corect version will be selected automatically.
 
----
-
-### 4. future-script.ps1
-**Purpose:** This is a future script
-
-**Usage:**
-
-```bash
-.\future-script.ps1
-```
