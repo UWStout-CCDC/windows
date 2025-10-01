@@ -56,6 +56,9 @@ if ($installWireshark -eq "yes") {
 }
 
 # Sysinternals
+
+###$installSysinternals = Read-Host "Do you want to install Sysinternals tools? (yes/no)"
+###if ($installSysinternals -eq "yes") {
 $ccdcPath = "C:\CCDC"
 $toolsPath = "$ccdcPath\tools-Windows"
 $extractPath = "C:\Sysinternals"
@@ -93,6 +96,7 @@ foreach ($tool in $sysinternalsTools) {
     }
 }
 Write-Host "Sysinternals setup is complete."
+###}
 
 # Remove script from startup
 $entryName = "MyStartupScript"
