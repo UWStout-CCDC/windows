@@ -56,18 +56,43 @@ if ($installWireshark -eq "yes") {
 }
 
 # Sysinternals
-$installSysinternals = Read-Host "Do you want to install Sysinternals tools? (yes/no)"
-if ($installSysinternals -eq "yes") {
-    Start-Job -ScriptBlock {
-        Write-Host "Installing Sysinternals..."
-        New-Item -Path "C:\Sysinternals" -ItemType Directory
-        Expand-Archive -Path "C:\CCDC\tools-Windows\Autoruns.zip" -DestinationPath "C:\Sysinternals"
-        Expand-Archive -Path "C:\CCDC\tools-Windows\ProcessExplorer.zip" -DestinationPath "C:\Sysinternals"
-        Expand-Archive -Path "C:\CCDC\tools-Windows\ProcessMonitor.zip" -DestinationPath "C:\Sysinternals"
-        Expand-Archive -Path "C:\CCDC\tools-Windows\TCPView.zip" -DestinationPath "C:\Sysinternals"
-        Write-Host "Sysinternals installed to C:\Sysinternals"
+$ccdcPath = "C:\CCDC"
+$toolsPath = "$ccdcPath\tools-Windows"
+$extractPath = "C:\Sysinternals"
+$desktopPath = [System.Environment]::GetFolderPath('Desktop')
+
+Write-Host "Ensuring extraction directory exists at $extractPath..."
+New-Item -Path $extractPath -ItemType Directory -Force | Out-Null
+
+$sysinternalsTools = @(
+    @{ Name = "Autoruns";        Exe = "Autoruns.exe"; Lnk = "Autoruns.lnk" },
+    @{ Name = "ProcessExplorer"; Exe = "procexp.exe";  Lnk = "ProcExp.lnk" },
+    @{ Name = "ProcessMonitor";  Exe = "Procmon.exe";  Lnk = "ProcMon.lnk" },
+    @{ Name = "TCPView";         Exe = "tcpview.exe";  Lnk = "TCPView.lnk" }
+)
+
+$WScriptObj = New-Object -ComObject ("WScript.Shell")
+
+foreach ($tool in $sysinternalsTools) {
+    $zipFile = Join-Path -Path $toolsPath -ChildPath "$($tool.Name).zip"
+    
+    if (Test-Path $zipFile) {
+        Write-Host "Processing $($tool.Name)..."
+        Write-Host "  -> Extracting..."
+        Expand-Archive -Path $zipFile -DestinationPath $extractPath -Force #Using force to avoid printing conflicting file errors printing in the terminal
+        Write-Host "  -> Creating shortcut on desktop..."
+        $exeFile = Join-Path -Path $extractPath -ChildPath $tool.Exe
+        $shortcutFile = Join-Path -Path $desktopPath -ChildPath $tool.Lnk
+        
+        $shortcut = $WScriptObj.CreateShortcut($shortcutFile)
+        $shortcut.TargetPath = $exeFile
+        $shortcut.Save()
+    }
+    else {
+        Write-Warning "Could not find '$($tool.Name).zip' in $toolsPath. Please run the download script first. Skipping."
     }
 }
+Write-Host "Sysinternals setup is complete."
 
 # Remove script from startup
 $entryName = "MyStartupScript"
