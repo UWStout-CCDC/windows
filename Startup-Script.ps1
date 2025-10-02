@@ -95,6 +95,7 @@ try {
 $ccdcPath = "C:\CCDC"
 $toolsPath = "$ccdcPath\tools-Windows"
 
+
 # Download the install script
 $installScriptPath = "$toolsPath\Installs.ps1"
 Write-Host "Downloading install script..."
