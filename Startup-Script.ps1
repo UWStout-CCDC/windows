@@ -94,9 +94,6 @@ try {
 # Set directories
 $ccdcPath = "C:\CCDC"
 $toolsPath = "$ccdcPath\tools-Windows"
-New-Item -Path $ccdcPath -ItemType Directory -Force | Out-Null
-New-Item -Path $toolsPath -ItemType Directory -Force | Out-Null
-
 
 
 # Download the install script
