@@ -9,8 +9,6 @@ Write-Host "/ /___/ / /  __/ / / / /_   / __  / /_/ / /  / /_/ /  __/ / / / / / 
 Write-Host "\____/_/_/\___/_/ /_/\__/  /_/ /_/\__,_/_/   \__,_/\___/_/ /_/_/_/ /_/\__, /  "
 Write-Host "                                                                     /____/   "
 
-Write-Host "10 hardening script"
-
 # Initialize the global jobs array
 $global:jobs = @()
 
