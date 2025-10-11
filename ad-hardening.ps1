@@ -9,6 +9,31 @@ Write-Host " / ___ |/ /_/ /  / __  / /_/ / /  / /_/ /  __/ / / / / / / / /_/ / "
 Write-Host "/_/  |_/_____/  /_/ /_/\__,_/_/   \__,_/\___/_/ /_/_/_/ /_/\__, /  "
 Write-Host "                                                          /____/   "       
 
+# Rotate Kerberos pass
+do {
+    $newkrbtgtPassword = Read-Host -AsSecureString "Enter new password for the krbtgt account"
+    $confirmkrbtgtPassword = Read-Host -AsSecureString "Confirm new password for the local krbtgt account"
+
+    $newkrbtgtPasswordPlain = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($newkrbtgtPassword))
+    $confirmkrbtgtPasswordPlain = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($confirmkrbtgtPassword))
+
+    if ($newkrbtgtPasswordPlain -ne $confirmkrbtgtPasswordPlain) {
+        Write-Host "Passwords do not match. Please try again."
+    }
+} while ($newkrbtgtPasswordPlain -ne $confirmkrbtgtPasswordPlain)
+# do it again
+do {
+    $newkrbtgtPassword = Read-Host -AsSecureString "Enter new password for the krbtgt account"
+    $confirmkrbtgtPassword = Read-Host -AsSecureString "Confirm new password for the local krbtgt account"
+
+    $newkrbtgtPasswordPlain = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($newkrbtgtPassword))
+    $confirmkrbtgtPasswordPlain = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($confirmkrbtgtPassword))
+
+    if ($newkrbtgtPasswordPlain -ne $confirmkrbtgtPasswordPlain) {
+        Write-Host "Passwords do not match. Please try again."
+    }
+} while ($newkrbtgtPasswordPlain -ne $confirmkrbtgtPasswordPlain)
+
 
 # Print out all DNS zones
 Get-DNSServerZone
