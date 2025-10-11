@@ -1,5 +1,6 @@
 $Host.UI.RawUI.ForegroundColor = "DarkGreen"
 $Host.UI.RawUI.BackgroundColor = "Black"
+clear
 
 Write-Host "    ___    ____     __  __               __           _            "
 Write-Host "   /   |  / __ \   / / / /___ __________/ /__  ____  (_)___  ____ _"
@@ -7,7 +8,6 @@ Write-Host "  / /| | / / / /  / /_/ / __ `/ ___/ __  / _ \/ __ \/ / __ \/ __ `/"
 Write-Host " / ___ |/ /_/ /  / __  / /_/ / /  / /_/ /  __/ / / / / / / / /_/ / "
 Write-Host "/_/  |_/_____/  /_/ /_/\__,_/_/   \__,_/\___/_/ /_/_/_/ /_/\__, /  "
 Write-Host "                                                          /____/   "       
-
 
 
 # Print out all DNS zones

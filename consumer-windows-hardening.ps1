@@ -1,6 +1,6 @@
 $Host.UI.RawUI.ForegroundColor = "DarkGreen"
 $Host.UI.RawUI.BackgroundColor = "Black"
-
+clear
 
 Write-Host "   _________            __     __  __               __           _            "
 Write-Host "  / ____/ (_)__  ____  / /_   / / / /___ __________/ /__  ____  (_)___  ____ _"
