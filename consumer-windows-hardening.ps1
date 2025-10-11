@@ -1,7 +1,13 @@
 $Host.UI.RawUI.ForegroundColor = "DarkGreen"
 $Host.UI.RawUI.BackgroundColor = "Black"
 
-Write-Host "10 hardening script"
+
+Write-Host "   _________            __     __  __               __           _            "
+Write-Host "  / ____/ (_)__  ____  / /_   / / / /___ __________/ /__  ____  (_)___  ____ _"
+Write-Host "/ /   / / / _ \/ __ \/ __/  / /_/ / __ `/ ___/ __  / _ \/ __ \/ / __ \/ __ `/"
+Write-Host "/ /___/ / /  __/ / / / /_   / __  / /_/ / /  / /_/ /  __/ / / / / / / / /_/ / "
+Write-Host "\____/_/_/\___/_/ /_/\__/  /_/ /_/\__,_/_/   \__,_/\___/_/ /_/_/_/ /_/\__, /  "
+Write-Host "                                                                     /____/   "
 
 # Initialize the global jobs array
 $global:jobs = @()
