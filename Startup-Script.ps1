@@ -5,6 +5,7 @@ Import-Module -Name BitsTransfer
 
 $Host.UI.RawUI.ForegroundColor = "DarkGreen"
 $Host.UI.RawUI.BackgroundColor = "Black"
+clear
 
 Write-Host " _       ___           __                      ________                          "
 Write-Host "| |     / (_)___  ____/ /___ _      _______   / ____/ /__  ____ _____  ___  _____"
