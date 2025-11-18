@@ -19,13 +19,14 @@ $site = "UWStout-CCDC/windows"
 $startupRegistryPaths = @(
     "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run",
     "HKCU:\Software\Microsoft\Windows\CurrentVersion\RunOnce",
+    "HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run",
+    "HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Windows\Run",
+    
+    "HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run",
     "HKLM:\Software\Microsoft\Windows\CurrentVersion\Run",
     "HKLM:\Software\Microsoft\Windows\CurrentVersion\RunOnce",
     "HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Run",
     "HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\RunOnce",
-    "HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run",
-    "HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run",
-    "HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Windows\Run",
     "HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Windows\Run"
 )
 
