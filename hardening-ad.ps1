@@ -5,7 +5,11 @@ Import-Module -Name BitsTransfer
 
 $Host.UI.RawUI.ForegroundColor = "DarkGreen"
 $Host.UI.RawUI.BackgroundColor = "Black"
+<<<<<<< HEAD
 Clear-Host
+=======
+clear
+>>>>>>> main
 
 Write-Host " _       ___           __                      ________                          "
 Write-Host "| |     / (_)___  ____/ /___ _      _______   / ____/ /__  ____ _____  ___  _____"
@@ -14,6 +18,7 @@ Write-Host "| |/ |/ / / / / / /_/ / /_/ / |/ |/ (__  )  / /___/ /  __/ /_/ / / /
 Write-Host "|__/|__/_/_/ /_/\__,_/\____/|__/|__/____/   \____/_/\___/\__,_/_/ /_/\___/_/  "
 
 $site = "UWStout-CCDC/windows"
+<<<<<<< HEAD
 Create-Item -Path "C:\CCDC" -ItemType Directory
 Create-Item -Path "C:\CCDC\tools-Windows" -ItemType Directory
 
@@ -66,3 +71,5 @@ Get-ScheduledTask | Where-Object { $_.TaskPath -notlike "\Microsoft\*" } | ForEa
     $_.TaskName >> "C:\CCDC\persistence-schtasks.txt"
     Unregister-ScheduledTask -TaskName $_.TaskName -Confirm:$false
 }
+=======
+>>>>>>> main
