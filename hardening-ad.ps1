@@ -13,7 +13,7 @@ Write-Host "| | /| / / / __ \/ __  / __ \ | /| / / ___/  / /   / / _ \/ __ `/ __
 Write-Host "| |/ |/ / / / / / /_/ / /_/ / |/ |/ (__  )  / /___/ /  __/ /_/ / / / /  __/ /    "
 Write-Host "|__/|__/_/_/ /_/\__,_/\____/|__/|__/____/   \____/_/\___/\__,_/_/ /_/\___/_/  "
 
-$site = "UWStout-CCDC/windows"
+$site = "UWStout-CCDC/windows" # Change when changing repo
 Create-Item -Path "C:\CCDC" -ItemType Directory
 Create-Item -Path "C:\CCDC\tools-Windows" -ItemType Directory
 
@@ -122,5 +122,29 @@ try {
 # Create directories
 $ccdcPath = "C:\CCDC"
 mkdir $ccdcPath 
-mkdir "$ccdcPath\DNS" 
-mkdir "C:\CCDC\tools-Windows" 
+mkdir "$ccdcPath\DNS"
+
+# Download the GPO script
+# We will uncomment this section once we find working GPOs
+# $scriptPath = "$toolsPath\GPOs.ps1"
+# Write-Host "Downloading GPO script..."
+# Invoke-WebRequest "https://github.com/$site/raw/refs/heads/master/windows/CCDL-Windows/GPOs.ps1" -OutFile $scriptPath
+# . $scriptPath
+
+# Download the install script
+$path = "$ccdcPath\Installs.ps1"
+Write-Host "Downloading install script..."
+Invoke-WebRequest "https://github.com/$site/raw/refs/heads/main/Installs.ps1" -OutFile $path
+
+# Download the update script
+$path = "$ccdcPath\Win-Update.ps1"
+Write-Host "Downloading install script..."
+Invoke-WebRequest "https://github.com/$site/raw/refs/heads/main/Win-Update.ps1" -OutFile $path
+
+# Check if PSWindowsUpdate is installed, if not, install it
+if (-not (Get-Module -ListAvailable -Name PSWindowsUpdate)) {
+    Write-Host "PSWindowsUpdate module not found. Installing..."
+    Install-Module -Name PSWindowsUpdate -Force -Scope CurrentUser
+}
+
+Import-Module -Name PSWindowsUpdate
