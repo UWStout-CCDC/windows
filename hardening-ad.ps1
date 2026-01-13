@@ -136,6 +136,11 @@ $path = "$ccdcPath\Installs.ps1"
 Write-Host "Downloading install script..."
 Invoke-WebRequest "https://github.com/$site/raw/refs/heads/main/Installs.ps1" -OutFile $path
 
+# Set the installer script run on start
+$scriptPath = "$ccdcPath\Installs.ps1"
+$entryName = "MyStartupScript"
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name $entryName -Value "powershell.exe -File `"$scriptPath`""
+
 # Download the update script
 $path = "$ccdcPath\Win-Update.ps1"
 Write-Host "Downloading install script..."
@@ -148,3 +153,164 @@ if (-not (Get-Module -ListAvailable -Name PSWindowsUpdate)) {
 }
 
 Import-Module -Name PSWindowsUpdate
+
+# Print out all DNS zones
+Get-DNSServerZone
+# Ask the user for the DNS zone
+$zone = Read-Host "Enter the DNS zone used by the scoring engine"
+
+# Initialize the global jobs array
+$global:jobs = @()
+
+function Start-LoggedJob {
+    param (
+        [string]$JobName,
+        [scriptblock]$ScriptBlock
+    )
+    
+    $job = Start-Job -Name $JobName -ScriptBlock $ScriptBlock
+    $global:jobs += @($job)  # Ensure the job is added as an array element
+    Write-Host "Started job: $JobName"
+}
+
+# Disable guest account
+Start-LoggedJob -JobName "Disable Guest Account" -ScriptBlock {
+    try {
+        $guestAccount = Get-LocalUser -Name "Guest"
+        if ($guestAccount.Enabled) {
+            Disable-LocalUser -Name "Guest"
+            Write-Host "--------------------------------------------------------------------------------"
+            Write-Host "Guest account has been disabled."
+            Write-Host "--------------------------------------------------------------------------------"
+        } else {
+            Write-Host "--------------------------------------------------------------------------------"
+            Write-Host "Guest account is already disabled."
+            Write-Host "--------------------------------------------------------------------------------"
+        }
+    } catch {
+        Write-Hos   t "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+        Write-Host "An error occurred while disabling the guest account: $_"
+        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+    }
+}
+
+# Enable Windows Defender with real-time protection and PUA protection
+Start-LoggedJob -JobName "Enable Windows Defender" -ScriptBlock {
+    try {
+        Set-MpPreference -DisableRealtimeMonitoring $false
+        Set-MpPreference -PUAProtection Enabled
+        
+        Write-Host "--------------------------------------------------------------------------------"
+        Write-Host "Windows Defender enabled with real-time protection and PUA protection."
+        Write-Host "--------------------------------------------------------------------------------"
+    } catch {
+        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+        Write-Host "An error occurred while enabling Windows Defender: $_"
+        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+    }
+}
+
+# Enable Windows Firewall with basic rules
+Start-LoggedJob -JobName "Configure Windows Firewall" -ScriptBlock {
+    try {
+        # Export existing Firewall rules using netsh
+        netsh advfirewall export "$ccdcPath\firewall.old"
+
+        # Enable Windows Firewall profiles
+        Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled True
+
+        # Block by default
+        Set-NetFirewallProfile -Profile Domain,Public,Private -DefaultInboundAction Block -DefaultOutboundAction Block
+        Set-NetFirewallProfile -Profile Domain,Public,Private -NotifyOnListen True
+
+        # Enable Logging
+        Set-NetFirewallProfile -Profile Domain,Public,Private -LogFileName "$ccdcPath\pfirewall.log" -LogMaxSizeKilobytes 8192 -LogAllowed True -LogBlocked True
+
+        # Disable existing on all profiles rules
+        Get-NetFirewallRule | Set-NetFirewallRule -Profile Domain -Enabled False
+        Get-NetFirewallRule | Set-NetFirewallRule -Profile Private -Enabled False
+        Get-NetFirewallRule | Set-NetFirewallRule -Profile Public -Enabled False
+
+        # Firewall inbound rules
+        New-NetFirewallRule -DisplayName "NTP in" -Direction Inbound -Action Allow -Enabled True -Profile Any -LocalPort 123 -Protocol UDP
+        New-NetFirewallRule -DisplayName "Allow Pings in" -Direction Inbound -Action Allow -Enabled True -Protocol ICMPv4 -IcmpType 8
+        New-NetFirewallRule -DisplayName "Splunk IN" -Direction Outbound -Action Allow -Enabled True -Profile Any -RemotePort 8000,8089,9997 -Protocol TCP
+        New-NetFirewallRule -DisplayName "DNS IN (UDP)" -Direction Inbound -Action Allow -Enabled True -Profile Any -LocalPort 53 -Protocol UDP
+        New-NetFirewallRule -DisplayName "DNS IN (TCP)" -Direction Inbound -Action Allow -Enabled True -Profile Any -LocalPort 53 -Protocol TCP
+        New-NetFirewallRule -DisplayName "LDAP TCP IN" -Direction Inbound -Action Allow -Program "C:\Windows\System32\lsass.exe" -Enabled True -Profile Any -LocalPort 389 -Protocol TCP
+        New-NetFirewallRule -DisplayName "LDAP UDP IN" -Direction Inbound -Action Allow -Program "C:\Windows\System32\lsass.exe" -Enabled True -Profile Any -LocalPort 389 -Protocol UDP
+        New-NetFirewallRule -DisplayName "LDAP Global Catalog IN" -Direction Inbound -Action Allow -Program "C:\Windows\System32\lsass.exe" -Enabled True -Profile Any -LocalPort 3268 -Protocol TCP
+        New-NetFirewallRule -DisplayName "NETBIOS Resolution IN" -Direction Inbound -Action Allow -Program "System" -Enabled True -Profile Any -LocalPort 138 -Protocol UDP
+        New-NetFirewallRule -DisplayName "Secure LDAP IN" -Direction Inbound -Action Allow -Program "C:\Windows\System32\lsass.exe" -Enabled True -Profile Any -LocalPort 636 -Protocol TCP
+        New-NetFirewallRule -DisplayName "Secure LDAP Global Catalog IN" -Direction Inbound -Action Allow -Program "C:\Windows\System32\lsass.exe" -Enabled True -Profile Any -LocalPort 3269 -Protocol TCP
+        New-NetFirewallRule -DisplayName "RPC IN" -Direction Inbound -Action Allow -Program "C:\Windows\System32\lsass.exe" -Enabled True -Profile Any -LocalPort RPC -Protocol TCP
+        New-NetFirewallRule -DisplayName "RPC-EPMAP IN" -Direction Inbound -Action Allow -Program "C:\Windows\System32\svchost.exe" -Enabled True -Profile Any -LocalPort RPC-EPMap -Protocol TCP
+        New-NetFirewallRule -DisplayName "DHCP UDP IN" -Direction Inbound -Action Allow -Program "C:\Windows\System32\svchost.exe" -Enabled True -Profile Any -LocalPort 67,68 -Protocol UDP
+        New-NetFirewallRule -DisplayName "RPC for DNS IN" -Direction Inbound -Action Allow -Program "C:\Windows\System32\dns.exe" -Enabled True -Profile Any -LocalPort RPC -Protocol TCP
+
+        # Outbound rules
+        New-NetFirewallRule -DisplayName "Allow Pings out" -Direction Outbound -Action Allow -Enabled True -Protocol ICMPv4 -IcmpType 8
+        New-NetFirewallRule -DisplayName "Splunk OUT" -Direction Outbound -Action Allow -Enabled True -Profile Any -RemotePort 8000,8089,9997 -Protocol TCP
+        New-NetFirewallRule -DisplayName "Web OUT" -Direction Outbound -Action Allow -Enabled True -Profile Any -RemotePort 80,443 -Protocol TCP
+        New-NetFirewallRule -DisplayName "NTP OUT" -Direction Outbound -Action Allow -Enabled True -Profile Any -RemotePort 123 -Protocol UDP
+        New-NetFirewallRule -DisplayName "Active Directory TCP OUT" -Direction Outbound -Action Allow -Program "C:\Windows\System32\lsass.exe" -Enabled True -Profile Any -Protocol TCP
+        New-NetFirewallRule -DisplayName "Active Directory UDP OUT" -Direction Outbound -Action Allow -Program "C:\Windows\System32\lsass.exe" -Enabled True -Profile Any -Protocol UDP
+        New-NetFirewallRule -DisplayName "DNS TCP OUT" -Direction Outbound -Action Allow -Program "C:\Windows\System32\dns.exe" -Enabled True -Profile Any -Protocol TCP
+        New-NetFirewallRule -DisplayName "DNS UDP OUT" -Direction Outbound -Action Allow -Program "C:\Windows\System32\dns.exe" -Enabled True -Profile Any -Protocol UDP
+        New-NetFirewallRule -DisplayName "DNS OUT" -Direction Outbound -Action Allow -Enabled True -Profile Any -RemotePort 53 -Protocol UDP
+        New-NetFirewallRule -DisplayName "DHCP" -Direction Outbound -Action Allow -Program "C:\Windows\System32\svchost.exe" -Enabled True -Profile Any -LocalPort 68 -RemotePort 67 -Protocol UDP
+        
+        Write-Host "--------------------------------------------------------------------------------"
+        Write-Host "Windows Firewall configured with basic rules."
+        Write-Host "--------------------------------------------------------------------------------"
+    } catch {
+        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+        Write-Host "An error occurred while configuring Windows Firewall: $_"
+        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+    }
+}
+
+# Configure Remote Desktop settings (disable if not needed)
+Start-LoggedJob -JobName "Disable Remote Desktop" -ScriptBlock {
+    try {
+        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 1
+        Write-Host "--------------------------------------------------------------------------------"
+        Write-Host "Remote Desktop Protocol disabled."
+        Write-Host "--------------------------------------------------------------------------------"
+    } catch {
+        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" 
+        Write-Host "An error occurred while disabling Remote Desktop: $_"
+        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" 
+    }
+}
+
+# Set account lockout policies
+Start-LoggedJob -JobName "Set Account Lockout Policies" -ScriptBlock { 
+    try {
+        net accounts /lockoutthreshold:5 /lockoutduration:30 /lockoutwindow:30 
+        Write-Host "--------------------------------------------------------------------------------"
+        Write-Host "Account lockout policies set."
+        Write-Host "--------------------------------------------------------------------------------"
+    } catch {
+        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" 
+        Write-Host "An error occurred while setting account lockout policies: $_"
+        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" 
+    }
+}
+
+Enable audit policies for key events like login, account management, file system changes, and registry changes
+Start-LoggedJob -JobName "Enable Audit Policies" -ScriptBlock {
+    try {
+        AuditPol.exe /set /subcategory:"Logon" /success:enable /failure:enable
+        AuditPol.exe /set /subcategory:"User Account Management" /success:enable /failure:enable
+        AuditPol.exe /set /subcategory:"File System" /success:enable /failure:enable
+        AuditPol.exe /set /subcategory:"Registry" /success:enable /failure:enable
+        Write-Host "--------------------------------------------------------------------------------"
+        Write-Host "Audit policies for login, account management, file system changes, and registry changes enabled."
+        Write-Host "--------------------------------------------------------------------------------"
+    } catch {
+        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+        Write-Host "An error occurred while enabling audit policies: $_"
+        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+    }
+}
