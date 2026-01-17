@@ -463,3 +463,210 @@ Start-LoggedJob -JobName "Block Credential Dumping" -ScriptBlock {
         Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" 
     }
 }
+
+# disable remote sign in
+Start-LoggedJob -JobName "Disable Remote Sign-in" -ScriptBlock {
+    try {
+        $regPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System"
+        Set-ItemProperty -Path $regPath -Name "EnableLUA" -Value 0
+        Write-Host "--------------------------------------------------------------------------------"
+        Write-Host "Remote sign-in disabled."
+        Write-Host "--------------------------------------------------------------------------------"
+    } catch {
+        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+        Write-Host "An error occurred while disabling remote sign-in: $_"
+        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+    }
+}
+
+# Enable LSA Protection, restrict debug privileges, disable WDigest
+Start-LoggedJob -JobName "Enable LSA Protection" -ScriptBlock {
+    try {
+        $regPath = "HKLM:\SYSTEM\CurrentControlSet\Control\Lsa"
+        Set-ItemProperty -Path $regPath -Name "LsaCfgFlags" -Value 1
+        Set-ItemProperty -Path $regPath -Name "RunAsPPL" -Value 1
+        Write-Host "--------------------------------------------------------------------------------"
+        Write-Host "LSA Protection enabled."
+        Write-Host "--------------------------------------------------------------------------------"
+    } catch {
+        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+        Write-Host "An error occurred while enabling LSA Protection: $_"
+        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+    }
+}
+Start-LoggedJob -JobName "Restrict Debug Privileges" -ScriptBlock {
+    try {
+        $regPath = "HKLM:\SYSTEM\CurrentControlSet\Control\Lsa"
+        Set-ItemProperty -Path $regPath -Name "RestrictAnonymous" -Value 1
+        Set-ItemProperty -Path $regPath -Name "RestrictAnonymousSAM" -Value 1
+        Set-ItemProperty -Path $regPath -Name "EveryoneIncludesAnonymous" -Value 0
+        Set-ItemProperty -Path $regPath -Name "NoDefaultAdminShares" -Value 1
+        Set-ItemProperty -Path $regPath -Name "NoLMAuthentication" -Value 1
+        Set-ItemProperty -Path $regPath -Name "NoNullSessionShares" -Value 1
+        Set-ItemProperty -Path $regPath -Name "NoNullSessionUsername" -Value 1
+        Set-ItemProperty -Path $regPath -Name "NoNullSessionPassword" -Value 1
+        Set-ItemProperty -Path $regPath -Name "NoSaveSettings" -Value 1
+        Write-Host "--------------------------------------------------------------------------------"
+        Write-Host "Debug privileges restricted."
+        Write-Host "--------------------------------------------------------------------------------"
+    } catch {
+        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+        Write-Host "An error occurred while restricting debug privileges: $_"
+        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+    }
+}
+Start-LoggedJob -JobName "Disable WDigest" -ScriptBlock {
+    try {
+        $regPath = "HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest"
+        Set-ItemProperty -Path $regPath -Name "UseLogonCredential" -Value 0
+        Write-Host "--------------------------------------------------------------------------------"
+        Write-Host "WDigest disabled."
+        Write-Host "--------------------------------------------------------------------------------"
+    } catch {
+        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+        Write-Host "An error occurred while disabling WDigest: $_"
+        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+    }
+}
+
+# disable powershell remoting
+Start-LoggedJob -JobName "Disable PowerShell Remoting" -ScriptBlock {
+    try {
+        # Disable PSRemoting
+        Disable-PSRemoting -Force
+
+        # Stop and disable the WinRM service
+        Stop-Service -Name WinRM -Force
+        Set-Service -Name WinRM -StartupType Disabled
+
+        # Delete the listener that accepts requests on any IP address
+        winrm delete winrm/config/Listener?Address=*+Transport=HTTP
+        winrm delete winrm/config/Listener?Address=*+Transport=HTTPS
+
+        # Disable the firewall exceptions for WS-Management communications
+        Set-NetFirewallRule -Name "WINRM-HTTP-In-TCP" -Enabled False
+        Set-NetFirewallRule -Name "WINRM-HTTPS-In-TCP" -Enabled False
+
+        # Restore the value of the LocalAccountTokenFilterPolicy to 0
+        $regPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System"
+        Set-ItemProperty -Path $regPath -Name "LocalAccountTokenFilterPolicy" -Value 0
+
+        Write-Host "--------------------------------------------------------------------------------"
+        Write-Host "PowerShell remoting disabled."
+        Write-Host "--------------------------------------------------------------------------------"
+    } catch {
+        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+        Write-Host "An error occurred while disabling PowerShell remoting: $_"
+        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+    }
+}
+
+# Configuring Defender
+Start-LoggedJob -JobName "Configure Windows Defender Exploit Guard" -ScriptBlock {
+    try {
+        Set-MpPreference -EnableControlledFolderAccess Enabled
+        
+        # Configure system-level mitigations
+        Set-ProcessMitigation -System -Enable DEP, SEHOP, ForceRelocateImages, BottomUp, HighEntropy
+        
+        # Configure attack surface reduction rules
+        Set-MpPreference -AttackSurfaceReductionRules_Ids @(
+            "D4F940AB-401B-4EFC-AADC-AD5F3C50688A",  # Block executable content from email and webmail clients
+            "3B576869-A4EC-4529-8536-B80A7769E899",  # Block executable content from Office files
+            "75668C1F-73B5-4CF0-BB93-3ECF5CB7CC84",  # Block credential stealing from LSASS
+            "D1E49AAC-8F56-4280-B9BA-993A6D77406C"   # Block executable content from Office files that contain macros
+        )
+        Set-MpPreference -AttackSurfaceReductionRules_Actions @("Enable", "Enable", "Enable", "Enable")
+        
+        Write-Host "--------------------------------------------------------------------------------"
+        Write-Host "Windows Defender Exploit Guard configured."
+        Write-Host "--------------------------------------------------------------------------------"
+    } catch {
+        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+        Write-Host "An error occurred while configuring Windows Defender Exploit Guard: $_"
+        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+    }
+}
+Start-LoggedJob -JobName "Enable Windows Defender Credential Guard" -ScriptBlock {
+    try {
+        Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\DeviceGuard' -Name "EnableVirtualizationBasedSecurity" -Value 1
+        Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa' -Name "LsaCfgFlags" -Value 1
+        Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa' -Name "RunAsPPL" -Value 1
+        Write-Host "--------------------------------------------------------------------------------"
+        Write-Host "Windows Defender Credential Guard enabled."
+        Write-Host "--------------------------------------------------------------------------------"
+    } catch {
+        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+        Write-Host "An error occurred while enabling Windows Defender Credential Guard: $_"
+        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+    }
+}
+
+## Reminder to look into theese two later
+Start-LoggedJob -JobName "Patch Mimikatz" -ScriptBlock {
+    try {
+        $regPath = "HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest"
+        if (Test-Path $regPath) {
+            Set-ItemProperty -Path $regPath -Name "UseLogonCredential" -Value 0
+        }
+        Write-Host "--------------------------------------------------------------------------------"
+        Write-Host "Mimikatz patched."
+        Write-Host "--------------------------------------------------------------------------------"
+    } catch {
+        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+        Write-Host "An error occurred while patching Mimikatz: $_"
+        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+    }
+}
+
+Start-LoggedJob -JobName "Patch DCSync Vulnerability" -ScriptBlock {
+    try {
+        Import-Module ActiveDirectory
+        $permissions = Get-ACL "AD:\DC=domain,DC=com" | Select-Object -ExpandProperty Access
+        $criticalPermissions = $permissions | Where-Object { $_.ObjectType -eq "19195a5b-6da0-11d0-afd3-00c04fd930c9" -or $_.ObjectType -eq "4c164200-20c0-11d0-a768-00aa006e0529" }
+        foreach ($permission in $criticalPermissions) {
+            if ($permission.ActiveDirectoryRights -match "Replicating Directory Changes") {
+                Write-Host "Removing Replicating Directory Changes permission from $($permission.IdentityReference)"
+                $permissions.RemoveAccessRule($permission)
+            }
+        }
+        Set-ACL -Path "AD:\DC=domain,DC=com" -AclObject $permissions
+        Write-Host "--------------------------------------------------------------------------------"
+        Write-Host "DCSync vulnerability patched."
+        Write-Host "--------------------------------------------------------------------------------"
+    } catch {
+        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+        Write-Host "An error occurred while patching DCSync vulnerability: $_"
+        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+    }
+}
+
+## Make sure the only SMB allowed is SMBv2 (we hate SMBv1)
+Start-LoggedJob -JobName "Upgrade SMB" -ScriptBlock {
+    try {
+        $smbv1Enabled = (Get-SmbServerConfiguration).EnableSMB1Protocol
+        $smbv2Enabled = (Get-SmbServerConfiguration).EnableSMB2Protocol
+        $restart = $false
+
+        if ($smbv1Enabled -eq $true) {
+            Set-SmbServerConfiguration -EnableSMB1Protocol $false -Force
+            $restart = $true
+        }
+
+        if ($smbv2Enabled -eq $false) {
+            Set-SmbServerConfiguration -EnableSMB2Protocol $true -Force
+            $restart = $true
+        }
+
+        if ($restart -eq $true) {
+            Write-Host "Please consider restarting the machine for changes to take effect."
+        }
+        Write-Host "--------------------------------------------------------------------------------"
+        Write-Host "SMB upgraded."
+        Write-Host "--------------------------------------------------------------------------------"
+    } catch {
+        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+        Write-Host "An error occurred while upgrading SMB: $_"
+        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+    }
+}
