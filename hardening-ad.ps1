@@ -314,3 +314,152 @@ Start-LoggedJob -JobName "Enable Audit Policies" -ScriptBlock {
         Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
     }
 }
+Start-LoggedJob -JobName "Remove Unnecessary Network Shares" -ScriptBlock {
+    try {
+        Get-SmbShare | Where-Object { $_.Name -ne "ADMIN$" -and $_.Name -ne "C$" -and $_.Name -ne "IPC$" -and $_.Name -ne "NETLOGON" -and $_.Name -ne "SYSVOL" } | ForEach-Object {
+            Write-Host "Removing share: $($_.Name)"
+            Remove-SmbShare -Name $_.Name -Force
+        }
+        Write-Host "--------------------------------------------------------------------------------"
+        Write-Host "Unnecessary network shares removed."
+        Write-Host "--------------------------------------------------------------------------------"
+    } catch {
+        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+        Write-Host "An error occurred while removing unnecessary network shares: $_"
+        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+    }
+}
+
+
+# Install Windows updates
+Start-LoggedJob -JobName "Install Windows Updates" -ScriptBlock {
+    try {
+        Set-Service -Name wuauserv -StartupType Automatic
+        Write-Host "Installing Windows updates..."
+        Start-Sleep -Seconds 60
+
+        $maxRetries = 3
+        $retryCount = 0
+        $success = $false
+
+        while (-not $success -and $retryCount -lt $maxRetries) {
+            try {
+                Install-WindowsUpdate -AcceptAll -Install
+                Write-Host "--------------------------------------------------------------------------------"
+                Write-Host "Windows updates installed."
+                Write-Host "--------------------------------------------------------------------------------"
+                $success = $true
+            } catch {
+                $retryCount++
+                Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+                Write-Host "An error occurred while installing Windows updates: $_"
+                Write-Host "Retrying... ($retryCount/$maxRetries)"
+                Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+                Start-Sleep -Seconds 60
+            }
+        }
+
+        if (-not $success) {
+            Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+            Write-Host "Failed to install Windows updates after $maxRetries attempts."
+            Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+        }
+    } catch {
+        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+        Write-Host "An unexpected error occurred: $_"
+        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+    }
+}
+
+# Secure and backup DNS to ccdc folder NOTE TO SELF: figure out how to restore
+Start-LoggedJob -JobName "Secure and Backup DNS" -ScriptBlock {
+    try {
+        dnscmd.exe /Config /SocketPoolSize 10000
+        dnscmd.exe /Config /CacheLockingPercent 100
+        dnscmd.exe /ZoneExport $zone "$ccdcPath\DNS\$zone.dns"
+        Write-Host "--------------------------------------------------------------------------------"
+        Write-Host "DNS secured and backed up."
+        Write-Host "--------------------------------------------------------------------------------"
+    } catch {
+        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+        Write-Host "An error occurred while securing and backing up DNS: $_"
+        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+    }
+}
+
+# Lockdown the CCDC folder
+Start-LoggedJob -JobName "Lockdown CCDC Folder" -ScriptBlock {
+    try {
+        $ccdcPath = "C:\CCDC"
+        $acl = Get-Acl $ccdcPath
+        $acl.SetAccessRuleProtection($true, $false)
+        
+        # Remove existing access rules
+        $acl.Access | ForEach-Object { $acl.RemoveAccessRule($_) }
+        
+        # Add full control for necessary system accounts
+        $adminUser = [System.Security.Principal.NTAccount]"Administrator"
+        $systemUser = [System.Security.Principal.NTAccount]"SYSTEM"
+        $trustedInstaller = [System.Security.Principal.NTAccount]"NT SERVICE\TrustedInstaller"
+        $currentUser = [System.Security.Principal.NTAccount]::new([System.Security.Principal.WindowsIdentity]::GetCurrent().Name)
+        
+        $adminRule = New-Object System.Security.AccessControl.FileSystemAccessRule($adminUser, "FullControl", "Allow")
+        $systemRule = New-Object System.Security.AccessControl.FileSystemAccessRule($systemUser, "FullControl", "Allow")
+        $trustedInstallerRule = New-Object System.Security.AccessControl.FileSystemAccessRule($trustedInstaller, "FullControl", "Allow")
+        $currentUserRule = New-Object System.Security.AccessControl.FileSystemAccessRule($currentUser, "FullControl", "Allow")
+        
+        $acl.AddAccessRule($adminRule)
+        $acl.AddAccessRule($systemRule)
+        $acl.AddAccessRule($trustedInstallerRule)
+        $acl.AddAccessRule($currentUserRule)
+        
+        # Apply the modified ACL to the CCDC folder
+        Set-Acl -Path $ccdcPath -AclObject $acl
+        Write-Host "--------------------------------------------------------------------------------"
+        Write-Host "CCDC folder lockdown complete."
+        Write-Host "--------------------------------------------------------------------------------"
+    } catch {
+        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+        Write-Host "An error occurred while locking down the CCDC folder: $_"
+        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+    }
+}
+
+# Block credential dumping
+Start-LoggedJob -JobName "Block Credential Dumping" -ScriptBlock {
+    try {
+        $regPath = "HKLM:\SYSTEM\CurrentControlSet\Control\Lsa"
+        Set-ItemProperty -Path $regPath -Name "NoLmHash" -Value 1
+        Set-ItemProperty -Path $regPath -Name "LimitBlankPasswordUse" -Value 1
+        Set-ItemProperty -Path $regPath -Name "RestrictAnonymous" -Value 1
+        Set-ItemProperty -Path $regPath -Name "RestrictAnonymousSAM" -Value 1
+        Set-ItemProperty -Path $regPath -Name "EveryoneIncludesAnonymous" -Value 0
+        Set-ItemProperty -Path $regPath -Name "NoDefaultAdminShares" -Value 1
+        Set-ItemProperty -Path $regPath -Name "NoLMAuthentication" -Value 1
+        Set-ItemProperty -Path $regPath -Name "NoNullSessionShares" -Value 1
+        Set-ItemProperty -Path $regPath -Name "NoNullSessionUsername" -Value 1
+        Set-ItemProperty -Path $regPath -Name "NoNullSessionPassword" -Value 1
+        Set-ItemProperty -Path $regPath -Name "NoSaveSettings" -Value 1
+        
+        $regPath = "HKLM:\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters"
+        Set-ItemProperty -Path $regPath -Name "AutoShareWks" -Value 0
+        Set-ItemProperty -Path $regPath -Name "AutoShareServer" -Value 0
+        Set-ItemProperty -Path $regPath -Name "RestrictNullSessAccess" -Value 1
+        Set-ItemProperty -Path $regPath -Name "NullSessionPipes" -Value ""
+        Set-ItemProperty -Path $regPath -Name "NullSessionShares" -Value ""
+        Set-ItemProperty -Path $regPath -Name "Samba" -Value 0
+
+        $regPath = "HKLM:\SYSTEM\CurrentControlSet\Services\LanmanWorkstation\Parameters"
+        Set-ItemProperty -Path $regPath -Name "EnableSecuritySignature" -Value 1
+        Set-ItemProperty -Path $regPath -Name "RequireSecuritySignature" -Value 1
+        Set-ItemProperty -Path $regPath -Name "EnablePlainTextPassword" -Value 0
+        
+        Write-Host "--------------------------------------------------------------------------------"
+        Write-Host "Credential dumping blocked."
+        Write-Host "--------------------------------------------------------------------------------"
+    } catch {
+        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" 
+        Write-Host "An error occurred while blocking credential dumping: $_"
+        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" 
+    }
+}
