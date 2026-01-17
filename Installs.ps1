@@ -1,5 +1,6 @@
 $Host.UI.RawUI.ForegroundColor = "DarkGreen"
 $Host.UI.RawUI.BackgroundColor = "Black"
+Clear-Host
 
 Write-Host "Installer Script"
 
@@ -48,7 +49,7 @@ if (-not (Get-Module -ListAvailable -Name PSWindowsUpdate)) {
 $installFirefox = Read-Host "Do you want to install Firefox? (yes/no)"
 if ($installFirefox -eq "yes") {
     Start-Job -ScriptBlock {
-        $firefoxInstallerPath = "C:\CCDC\tools-Windows\FirefoxInstaller.exe"
+        $firefoxInstallerPath = "C:\CCDC\FirefoxInstaller.exe"
         Write-Host "Installing Firefox..."
         Start-Process -FilePath $firefoxInstallerPath -ArgumentList "/quiet" -Wait
     }
@@ -58,7 +59,7 @@ if ($installFirefox -eq "yes") {
 $installClamAV = Read-Host "Do you want to install ClamAV? (yes/no)"
 if ($installClamAV -eq "yes") {
     Start-Job -ScriptBlock {
-        $clamavInstallerPath = "C:\CCDC\tools-Windows\combined.msi"
+        $clamavInstallerPath = "C:\CCDC\combined.msi"
         Write-Host "Installing ClamAV..."
         Start-Process -FilePath $clamavInstallerPath -ArgumentList "/quiet /norestart" -Wait
         # Configure ClamAV for regular scans
@@ -80,7 +81,7 @@ if ($installClamAV -eq "yes") {
 $installNpcap = Read-Host "Do you want to install NPCAP? (yes/no)"
 if ($installNpcap -eq "yes") {
     Start-Job -ScriptBlock {
-        $npcapInstallerPath = "C:\CCDC\tools-Windows\npcap-1.80.exe"
+        $npcapInstallerPath = "C:\CCDC\npcap-1.80.exe"
         Write-Host "Installing NPCAP..."
         Start-Process -FilePath $npcapInstallerPath -Wait
     }
@@ -90,7 +91,7 @@ if ($installNpcap -eq "yes") {
 $installWireshark = Read-Host "Do you want to install Wireshark? (yes/no)"
 if ($installWireshark -eq "yes") {
     Start-Job -ScriptBlock {
-        $wiresharkIntallerPath = "C:\CCDC\tools-Windows\Wireshark-4.4.3-x64.exe"
+        $wiresharkIntallerPath = "C:\CCDC\Wireshark-4.4.3-x64.exe"
         Write-Host "Installing Wireshark..."
         Start-Process -FilePath $wiresharkIntallerPath -ArgumentList "/S" -Wait
     }
@@ -151,7 +152,7 @@ Write-Host "Setting execution policy back to Restricted..."
 Set-ExecutionPolicy -Scope LocalMachine -ExecutionPolicy Restricted -Force
 
 # Set script to run on startup to update windows
-$scriptPath = "C:\CCDC\tools-Windows\Win-Update.ps1"
+$scriptPath = "C:\CCDC\Win-Update.ps1"
 $entryName = "Windows Update Script"
 Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name $entryName -Value "powershell.exe -File `"$scriptPath`""
 
