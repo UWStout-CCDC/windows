@@ -670,3 +670,14 @@ Start-LoggedJob -JobName "Upgrade SMB" -ScriptBlock {
         Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
     }
 }
+
+# Monitor jobs
+while ($jobs.Count -gt 0) {
+    foreach ($job in $jobs) {
+        if ($job.State -eq 'Completed') {
+            $job | Receive-Job
+            $jobs = $jobs | Where-Object { $_.Id -ne $job.Id }
+        }
+    }
+    Start-Sleep -Seconds 5
+}
