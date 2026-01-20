@@ -210,9 +210,31 @@ Start-LoggedJob -JobName "Enable Windows Defender" -ScriptBlock {
     }
 }
 
+Start-LoggedJob -JobName "Configure IIS Passive Port Range" -ScriptBlock {
+    try {
+        $passivePortRange = "5000-5100"
+        Write-Host "Configuring IIS Passive Port Range to $passivePortRange..." -ForegroundColor Cyan
+        Set-WebConfigurationProperty -Filter "/system.ftpServer/firewallSupport" -Name "lowDataChannelPort" -Value 5000
+        Set-WebConfigurationProperty -Filter "/system.ftpServer/firewallSupport" -Name "highDataChannelPort" -Value 5100
+        Restart-Service ftpsvc
+        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+        Write-Host "Configured IIS passive port range"
+        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+    }
+    catch {
+        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+        Write-Host "An error occurred while setting passive port range (do this manually in IIS Manager)"
+        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+    }
+    
+}
+
 # Enable Windows Firewall with basic rules
 Start-LoggedJob -JobName "Configure Windows Firewall" -ScriptBlock {
     try {
+        #Passive Port range for FTP
+        $passivePortRange = "5000-5100"
+
         # Export existing Firewall rules using netsh
         netsh advfirewall export "$ccdcPath\firewall.old"
 
@@ -247,6 +269,9 @@ Start-LoggedJob -JobName "Configure Windows Firewall" -ScriptBlock {
         New-NetFirewallRule -DisplayName "RPC-EPMAP IN" -Direction Inbound -Action Allow -Program "C:\Windows\System32\svchost.exe" -Enabled True -Profile Any -LocalPort RPC-EPMap -Protocol TCP
         New-NetFirewallRule -DisplayName "DHCP UDP IN" -Direction Inbound -Action Allow -Program "C:\Windows\System32\svchost.exe" -Enabled True -Profile Any -LocalPort 67,68 -Protocol UDP
         New-NetFirewallRule -DisplayName "RPC for DNS IN" -Direction Inbound -Action Allow -Program "C:\Windows\System32\dns.exe" -Enabled True -Profile Any -LocalPort RPC -Protocol TCP
+        New-NetFirewallRule -DisplayName "FTP Service (Inbound)" -Direction Inbound -Action Allow -Protocol TCP -LocalPort 21 -Description "Allows FTP control traffic."
+        New-NetFirewallRule -DisplayName "FTP Passive Data (Inbound)" -Direction Inbound -Action Allow -Protocol TCP -LocalPort $passivePortRange -Description "Allows FTP passive data traffic."
+
 
         # Outbound rules
         New-NetFirewallRule -DisplayName "Allow Pings out" -Direction Outbound -Action Allow -Enabled True -Protocol ICMPv4 -IcmpType 8
@@ -259,7 +284,10 @@ Start-LoggedJob -JobName "Configure Windows Firewall" -ScriptBlock {
         New-NetFirewallRule -DisplayName "DNS UDP OUT" -Direction Outbound -Action Allow -Program "C:\Windows\System32\dns.exe" -Enabled True -Profile Any -Protocol UDP
         New-NetFirewallRule -DisplayName "DNS OUT" -Direction Outbound -Action Allow -Enabled True -Profile Any -RemotePort 53 -Protocol UDP
         New-NetFirewallRule -DisplayName "DHCP" -Direction Outbound -Action Allow -Program "C:\Windows\System32\svchost.exe" -Enabled True -Profile Any -LocalPort 68 -RemotePort 67 -Protocol UDP
-        
+        New-NetFirewallRule -DisplayName "FTP Service (Outbound)" -Direction Outbound -Action Allow -Protocol TCP -LocalPort 21
+        New-NetFirewallRule -DisplayName "FTP Passive Data (Outbound)" -Direction Outbound -Action Allow -Protocol TCP -LocalPort $passivePortRange
+
+
         Write-Host "--------------------------------------------------------------------------------"
         Write-Host "Windows Firewall configured with basic rules."
         Write-Host "--------------------------------------------------------------------------------"
@@ -298,7 +326,7 @@ Start-LoggedJob -JobName "Set Account Lockout Policies" -ScriptBlock {
     }
 }
 
-Enable audit policies for key events like login, account management, file system changes, and registry changes
+# Enable audit policies for key events like login, account management, file system changes, and registry changes
 Start-LoggedJob -JobName "Enable Audit Policies" -ScriptBlock {
     try {
         AuditPol.exe /set /subcategory:"Logon" /success:enable /failure:enable
@@ -619,27 +647,7 @@ Start-LoggedJob -JobName "Patch Mimikatz" -ScriptBlock {
     }
 }
 
-Start-LoggedJob -JobName "Patch DCSync Vulnerability" -ScriptBlock {
-    try {
-        Import-Module ActiveDirectory
-        $permissions = Get-ACL "AD:\DC=domain,DC=com" | Select-Object -ExpandProperty Access
-        $criticalPermissions = $permissions | Where-Object { $_.ObjectType -eq "19195a5b-6da0-11d0-afd3-00c04fd930c9" -or $_.ObjectType -eq "4c164200-20c0-11d0-a768-00aa006e0529" }
-        foreach ($permission in $criticalPermissions) {
-            if ($permission.ActiveDirectoryRights -match "Replicating Directory Changes") {
-                Write-Host "Removing Replicating Directory Changes permission from $($permission.IdentityReference)"
-                $permissions.RemoveAccessRule($permission)
-            }
-        }
-        Set-ACL -Path "AD:\DC=domain,DC=com" -AclObject $permissions
-        Write-Host "--------------------------------------------------------------------------------"
-        Write-Host "DCSync vulnerability patched."
-        Write-Host "--------------------------------------------------------------------------------"
-    } catch {
-        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-        Write-Host "An error occurred while patching DCSync vulnerability: $_"
-        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-    }
-}
+
 
 ## Make sure the only SMB allowed is SMBv2 (we hate SMBv1)
 Start-LoggedJob -JobName "Upgrade SMB" -ScriptBlock {
