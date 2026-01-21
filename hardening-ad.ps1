@@ -298,7 +298,7 @@ Start-LoggedJob -JobName "Set Account Lockout Policies" -ScriptBlock {
     }
 }
 
-Enable audit policies for key events like login, account management, file system changes, and registry changes
+#Enable audit policies for key events like login, account management, file system changes, and registry changes
 Start-LoggedJob -JobName "Enable Audit Policies" -ScriptBlock {
     try {
         AuditPol.exe /set /subcategory:"Logon" /success:enable /failure:enable
