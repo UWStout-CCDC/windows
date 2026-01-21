@@ -14,8 +14,8 @@ Write-Host "| |/ |/ / / / / / /_/ / /_/ / |/ |/ (__  )  / /___/ /  __/ /_/ / / /
 Write-Host "|__/|__/_/_/ /_/\__,_/\____/|__/|__/____/   \____/_/\___/\__,_/_/ /_/\___/_/  "
 
 $site = "UWStout-CCDC/windows" # Change when changing repo
-Create-Item -Path "C:\CCDC" -ItemType Directory
-Create-Item -Path "C:\CCDC\tools-Windows" -ItemType Directory
+New-Item-Path "C:\CCDC" -ItemType Directory
+New-Item-Path "C:\CCDC\tools-Windows" -ItemType Directory
 
 ## Clear persistence and document it ##
 
