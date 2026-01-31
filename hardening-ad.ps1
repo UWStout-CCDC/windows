@@ -14,8 +14,9 @@ Write-Host "| |/ |/ / / / / / /_/ / /_/ / |/ |/ (__  )  / /___/ /  __/ /_/ / / /
 Write-Host "|__/|__/_/_/ /_/\__,_/\____/|__/|__/____/   \____/_/\___/\__,_/_/ /_/\___/_/  "
 
 $site = "UWStout-CCDC/windows" # Change when changing repo
-New-Item-Path "C:\CCDC" -ItemType Directory
-New-Item-Path "C:\CCDC\tools-Windows" -ItemType Directory
+New-Item -Path "C:\CCDC" -ItemType Directory
+New-Item -Path "C:\CCDC\tools-Windows" -ItemType Directory
+New-Item -Path "C:\CCDC\DNS" -ItemType Directory
 
 ## Clear persistence and document it ##
 
@@ -118,11 +119,6 @@ try {
     Write-Host "An error occurred while rotating Kerberos password: $_"
     Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 }
-
-# Create directories
-$ccdcPath = "C:\CCDC"
-mkdir $ccdcPath 
-mkdir "$ccdcPath\DNS"
 
 # Download the GPO script
 # We will uncomment this section once we find working GPOs
@@ -372,20 +368,20 @@ Start-LoggedJob -JobName "Install Windows Updates" -ScriptBlock {
 }
 
 # Secure and backup DNS to ccdc folder NOTE TO SELF: figure out how to restore
-Start-LoggedJob -JobName "Secure and Backup DNS" -ScriptBlock {
-    try {
-        dnscmd.exe /Config /SocketPoolSize 10000
-        dnscmd.exe /Config /CacheLockingPercent 100
-        dnscmd.exe /ZoneExport $zone "$ccdcPath\DNS\$zone.dns"
-        Write-Host "--------------------------------------------------------------------------------"
-        Write-Host "DNS secured and backed up."
-        Write-Host "--------------------------------------------------------------------------------"
-    } catch {
-        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-        Write-Host "An error occurred while securing and backing up DNS: $_"
-        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-    }
-}
+# Start-LoggedJob -JobName "Secure and Backup DNS" -ScriptBlock { back up manually
+#     try {
+#         dnscmd.exe /Config /SocketPoolSize 10000
+#         dnscmd.exe /Config /CacheLockingPercent 100
+#         dnscmd.exe /ZoneExport $zone "$ccdcPath\DNS\$zone.dns"
+#         Write-Host "--------------------------------------------------------------------------------"
+#         Write-Host "DNS secured and backed up."
+#         Write-Host "--------------------------------------------------------------------------------"
+#     } catch {
+#         Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+#         Write-Host "An error occurred while securing and backing up DNS: $_"
+#         Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+#     }
+# }
 
 # Lockdown the CCDC folder
 Start-LoggedJob -JobName "Lockdown CCDC Folder" -ScriptBlock {
