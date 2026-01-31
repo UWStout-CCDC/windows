@@ -17,6 +17,7 @@ $site = "UWStout-CCDC/windows" # Change when changing repo
 New-Item -Path "C:\CCDC" -ItemType Directory
 New-Item -Path "C:\CCDC\tools-Windows" -ItemType Directory
 New-Item -Path "C:\CCDC\DNS" -ItemType Directory
+$ccdcPath = "C:\CCDC"
 
 ## Clear persistence and document it ##
 
@@ -105,7 +106,7 @@ try {
         for(($counter=0); $counter -lt 20; $counter++)
         {
         $randomCharacter = get-random -InputObject $letterNumberArray
-        $password =+ $randomCharacter
+        $password += $randomCharacter
         }
 
         $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
@@ -142,8 +143,8 @@ Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Na
 
 # Download the update script
 $path = "$ccdcPath\Win-Update.ps1"
-Write-Host "Downloading install script..."
-Invoke-WebRequest "https://github.com/$site/raw/refs/heads/main/Win-Update.ps1" -OutFile $path
+Write-Host "Downloading update script..."
+Invoke-WebRequest "https://github.com/$site/raw/refs/heads/main/update-windows.ps1" -OutFile $path
 
 # Check if PSWindowsUpdate is installed, if not, install it
 if (-not (Get-Module -ListAvailable -Name PSWindowsUpdate)) {
@@ -243,7 +244,7 @@ Start-LoggedJob -JobName "Configure Windows Firewall" -ScriptBlock {
         New-NetFirewallRule -DisplayName "Secure LDAP IN" -Direction Inbound -Action Allow -Program "C:\Windows\System32\lsass.exe" -Enabled True -Profile Any -LocalPort 636 -Protocol TCP
         New-NetFirewallRule -DisplayName "Secure LDAP Global Catalog IN" -Direction Inbound -Action Allow -Program "C:\Windows\System32\lsass.exe" -Enabled True -Profile Any -LocalPort 3269 -Protocol TCP
         New-NetFirewallRule -DisplayName "RPC IN" -Direction Inbound -Action Allow -Program "C:\Windows\System32\lsass.exe" -Enabled True -Profile Any -LocalPort RPC -Protocol TCP
-        New-NetFirewallRule -DisplayName "RPC-EPMAP IN" -Direction Inbound -Action Allow -Program "C:\Windows\System32\svchost.exe" -Enabled True -Profile Any -LocalPort RPC-EPMap -Protocol TCP
+        #New-NetFirewallRule -DisplayName "RPC-EPMAP IN" -Direction Inbound -Action Allow -Program "C:\Windows\System32\svchost.exe" -Enabled True -Profile Any -LocalPort RPC-EPMap -Protocol TCP
         New-NetFirewallRule -DisplayName "DHCP UDP IN" -Direction Inbound -Action Allow -Program "C:\Windows\System32\svchost.exe" -Enabled True -Profile Any -LocalPort 67,68 -Protocol UDP
         New-NetFirewallRule -DisplayName "RPC for DNS IN" -Direction Inbound -Action Allow -Program "C:\Windows\System32\dns.exe" -Enabled True -Profile Any -LocalPort RPC -Protocol TCP
 
