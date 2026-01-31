@@ -116,6 +116,7 @@ Invoke-WebRequest "https://github.com/$site/raw/refs/heads/main/Win-Update.ps1" 
 # Download necessary tools
 $tools = @(
     @{ Name = "Npcap Installer"; Url = "https://github.com/UWStout-CCDC/CCDC-scripts/raw/refs/heads/master/windows/CCDL-Resources/npcap-1.80.exe"; Path = "$toolsPath\npcap-1.80.exe" },
+    @{ Name = "EventLook"; Url = "https://github.com/kmaki565/EventLook/releases/download/1.0.8.0/EventLook-bf49885fb5888e20b16b94645c74fee8167c8b0f.zip"; Path = "$toolsPath\EventLook.zip" },
     @{ Name = "Firefox Installer"; Url = "https://github.com/UWStout-CCDC/CCDC-scripts/raw/refs/heads/master/windows/CCDL-Resources/Firefox%20Installer.exe"; Path = "$toolsPath\FirefoxInstaller.exe" },
     @{ Name = "ClamAV Installer Part 1"; Url = "https://github.com/UWStout-CCDC/CCDC-scripts/raw/refs/heads/master/windows/CCDL-Resources/setup_part.1"; Path = "$toolsPath\setup_part.1" },
     @{ Name = "ClamAV Installer Part 2"; Url = "https://github.com/UWStout-CCDC/CCDC-scripts/raw/refs/heads/master/windows/CCDL-Resources/setup_part.2"; Path = "$toolsPath\setup_part.2" },
