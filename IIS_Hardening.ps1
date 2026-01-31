@@ -16,7 +16,7 @@ Write-Host "|__/|__/_/_/ /_/\__,_/\____/|__/|__/____/   \____/_/\___/\__,_/_/ /_
 $site = "UWStout-CCDC/windows" # Change when changing repo
 New-Item -Path "C:\CCDC" -ItemType Directory
 New-Item -Path "C:\CCDC\tools-Windows" -ItemType Directory
-
+$ccdcPath = "C:\CCDC"
 ## Clear persistence and document it ##
 
 # Registry persistence
@@ -113,7 +113,7 @@ Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Na
 
 # Download the update script
 $path = "$ccdcPath\Win-Update.ps1"
-Write-Host "Downloading install script..."
+Write-Host "Downloading update script..."
 Invoke-WebRequest "https://github.com/$site/raw/refs/heads/main/update-windows.ps1" -OutFile $path
 
 # Check if PSWindowsUpdate is installed, if not, install it
@@ -231,7 +231,7 @@ Start-LoggedJob -JobName "Configure Windows Firewall" -ScriptBlock {
         New-NetFirewallRule -DisplayName "Secure LDAP IN" -Direction Inbound -Action Allow -Program "C:\Windows\System32\lsass.exe" -Enabled True -Profile Any -LocalPort 636 -Protocol TCP
         New-NetFirewallRule -DisplayName "Secure LDAP Global Catalog IN" -Direction Inbound -Action Allow -Program "C:\Windows\System32\lsass.exe" -Enabled True -Profile Any -LocalPort 3269 -Protocol TCP
         New-NetFirewallRule -DisplayName "RPC IN" -Direction Inbound -Action Allow -Program "C:\Windows\System32\lsass.exe" -Enabled True -Profile Any -LocalPort RPC -Protocol TCP
-        New-NetFirewallRule -DisplayName "RPC-EPMAP IN" -Direction Inbound -Action Allow -Program "C:\Windows\System32\svchost.exe" -Enabled True -Profile Any -LocalPort RPC-EPMap -Protocol TCP
+        #New-NetFirewallRule -DisplayName "RPC-EPMAP IN" -Direction Inbound -Action Allow -Program "C:\Windows\System32\svchost.exe" -Enabled True -Profile Any -LocalPort RPC-EPMap -Protocol TCP
         New-NetFirewallRule -DisplayName "DHCP UDP IN" -Direction Inbound -Action Allow -Program "C:\Windows\System32\svchost.exe" -Enabled True -Profile Any -LocalPort 67,68 -Protocol UDP
         New-NetFirewallRule -DisplayName "RPC for DNS IN" -Direction Inbound -Action Allow -Program "C:\Windows\System32\dns.exe" -Enabled True -Profile Any -LocalPort RPC -Protocol TCP
         New-NetFirewallRule -DisplayName "HTTPS IN" -Direction Inbound -Action Allow -Enabled True -Profile Any -LocalPort 443 -Protocol TCP
@@ -295,7 +295,7 @@ Start-LoggedJob -JobName "Set Account Lockout Policies" -ScriptBlock {
     }
 }
 
-# Enable audit policies for key events like login, account management, file system changes, and registry changes
+#Enable audit policies for key events like login, account management, file system changes, and registry changes
 Start-LoggedJob -JobName "Enable Audit Policies" -ScriptBlock {
     try {
         AuditPol.exe /set /subcategory:"Logon" /success:enable /failure:enable
@@ -483,11 +483,6 @@ Start-LoggedJob -JobName "Disable PowerShell Remoting" -ScriptBlock {
         # Stop and disable the WinRM service
         Stop-Service -Name WinRM -Force
         Set-Service -Name WinRM -StartupType Disabled
-
-        # Disable the firewall exceptions for WS-Management communications
-        Set-NetFirewallRule -Name "WINRM-HTTP-In-TCP" -Enabled False
-        Set-NetFirewallRule -Name "WINRM-HTTPS-In-TCP" -Enabled False
-
         # Restore the value of the LocalAccountTokenFilterPolicy to 0
         $regPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System"
         Set-ItemProperty -Path $regPath -Name "LocalAccountTokenFilterPolicy" -Value 0
@@ -562,11 +557,12 @@ Start-LoggedJob -JobName "Patch Mimikatz" -ScriptBlock {
 
 
 
-## Make sure the only SMB allowed is SMBv2 (we hate SMBv1) !!!BROKEN!!!
+## Make sure the only SMB allowed is SMBv2 (we hate SMBv1)
 Start-LoggedJob -JobName "Upgrade SMB" -ScriptBlock {
     try {
         Set-SmbServerConfiguration -EnableSMB1Protocol $false -Force
         Set-SmbServerConfiguration -EnableSMB2Protocol $true -Force
+
         Write-Host "--------------------------------------------------------------------------------"
         Write-Host "SMB upgraded."
         Write-Host "--------------------------------------------------------------------------------"
