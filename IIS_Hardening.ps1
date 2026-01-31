@@ -269,6 +269,8 @@ Start-LoggedJob -JobName "Configure Windows Firewall" -ScriptBlock {
         New-NetFirewallRule -DisplayName "RPC-EPMAP IN" -Direction Inbound -Action Allow -Program "C:\Windows\System32\svchost.exe" -Enabled True -Profile Any -LocalPort RPC-EPMap -Protocol TCP
         New-NetFirewallRule -DisplayName "DHCP UDP IN" -Direction Inbound -Action Allow -Program "C:\Windows\System32\svchost.exe" -Enabled True -Profile Any -LocalPort 67,68 -Protocol UDP
         New-NetFirewallRule -DisplayName "RPC for DNS IN" -Direction Inbound -Action Allow -Program "C:\Windows\System32\dns.exe" -Enabled True -Profile Any -LocalPort RPC -Protocol TCP
+        New-NetFirewallRule -DisplayName "HTTPS IN" -Direction Inbound -Action Allow -Enabled True -Profile Any -LocalPort 443 -Protocol TCP
+        New-NetFirewallRule -DisplayName "HTTP IN" -Direction Inbound -Action Allow -Enabled True -Profile Any -LocalPort 80 -Protocol TCP
         New-NetFirewallRule -DisplayName "FTP Service (Inbound)" -Direction Inbound -Action Allow -Protocol TCP -LocalPort 21 -Description "Allows FTP control traffic."
         New-NetFirewallRule -DisplayName "FTP Passive Data (Inbound)" -Direction Inbound -Action Allow -Protocol TCP -LocalPort $passivePortRange -Description "Allows FTP passive data traffic."
 
@@ -284,6 +286,8 @@ Start-LoggedJob -JobName "Configure Windows Firewall" -ScriptBlock {
         New-NetFirewallRule -DisplayName "DNS UDP OUT" -Direction Outbound -Action Allow -Program "C:\Windows\System32\dns.exe" -Enabled True -Profile Any -Protocol UDP
         New-NetFirewallRule -DisplayName "DNS OUT" -Direction Outbound -Action Allow -Enabled True -Profile Any -RemotePort 53 -Protocol UDP
         New-NetFirewallRule -DisplayName "DHCP" -Direction Outbound -Action Allow -Program "C:\Windows\System32\svchost.exe" -Enabled True -Profile Any -LocalPort 68 -RemotePort 67 -Protocol UDP
+        New-NetFirewallRule -DisplayName "HTTPS OUT" -Direction Outbound -Action Allow -Enabled True -Profile Any -RemotePort 443 -Protocol TCP
+        New-NetFirewallRule -DisplayName "HTTP OUT" -Direction Outbound -Action Allow -Enabled True -Profile Any -RemotePort 80 -Protocol TCP
         New-NetFirewallRule -DisplayName "FTP Service (Outbound)" -Direction Outbound -Action Allow -Protocol TCP -LocalPort 21
         New-NetFirewallRule -DisplayName "FTP Passive Data (Outbound)" -Direction Outbound -Action Allow -Protocol TCP -LocalPort $passivePortRange
 
