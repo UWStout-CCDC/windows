@@ -114,7 +114,7 @@ Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Na
 # Download the update script
 $path = "$ccdcPath\Win-Update.ps1"
 Write-Host "Downloading install script..."
-Invoke-WebRequest "https://github.com/$site/raw/refs/heads/main/Win-Update.ps1" -OutFile $path
+Invoke-WebRequest "https://github.com/$site/raw/refs/heads/main/update-windows.ps1" -OutFile $path
 
 # Check if PSWindowsUpdate is installed, if not, install it
 if (-not (Get-Module -ListAvailable -Name PSWindowsUpdate)) {
