@@ -679,6 +679,20 @@ Start-LoggedJob -JobName "Upgrade SMB" -ScriptBlock {
     }
 }
 
+Start-LoggedJob -JobName "IIS Hardening" -ScriptBlock {
+    
+    try {
+        Import-Module WebAdministration  
+        Uninstall-WindowsFeature -Name Telnet-Client
+        Uninstall-WindowsFeature -Name Web-DAV-Publishing
+        Set-WebConfigurationProperty -Filter system.webserver/directorybrowse -PSPath IIS:\ -Name Enabled -Value False
+        #Set-ItemProperty "IIS:\\Sites\\$siteName" -Name logFile -Value @{logTargetW3C="File,ETW"} (NOT SURE IS WORKING DONT UNCOMMENT)
+    } catch {
+        
+    }
+
+}
+
 # Monitor jobs
 while ($jobs.Count -gt 0) {
     foreach ($job in $jobs) {
