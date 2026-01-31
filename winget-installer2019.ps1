@@ -5,6 +5,6 @@ Start-Bitstransfer -Source "https://github.com/microsoft/microsoft-ui-xaml/relea
 Start-Bitstransfer -Source "$vclibs" -Destination ".\Microsoft.VCLibs.x64.14.00.Desktop.appx"
 Start-Bitstransfer -Source "$winget" -Destination ".\Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle"
 
-Add-AppxPackage -Path ".\Microsoft.VCLibs.x64.14.00.Desktop.appx"
-Add-AppxPackage -Path ".\Microsoft.UI.Xaml.2.8.6.msixbundle"
-Add-AppxPackage -Path ".\Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle"
+Add-AppxPackage ".\Microsoft.VCLibs.x64.14.00.Desktop.appx"
+Add-AppxPackage ".\Microsoft.UI.Xaml.2.8.6.msixbundle"
+Add-AppxPackage ".\Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle"
