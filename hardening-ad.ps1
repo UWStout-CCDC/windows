@@ -100,15 +100,18 @@ try {
     $count = 0;
     while ($count -lt 3) {
         Write-Host "Rotating Kerberos account password..."
+        $password = ""
         $letterNumberArray = @('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '1', '2', '3', '4', '5', '6', '7', '8','9','0', '!', '@', '#', '$', '%', '^', '&', '*')
         for(($counter=0); $counter -lt 20; $counter++)
         {
         $randomCharacter = get-random -InputObject $letterNumberArray
-        $password = $randomString + $randomCharacter
+        $password =+ $randomCharacter
         }
 
+        $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
         $krbtgt = Get-LocalUser -Name "krbtgt"
-        Set-LocalUser -Name $krbtgt -Password $password
+        Set-LocalUser -Name $krbtgt -Password $securePassword
+        $count++
     }
     
     Write-Host "--------------------------------------------------------------------------------"
@@ -326,47 +329,6 @@ Start-LoggedJob -JobName "Remove Unnecessary Network Shares" -ScriptBlock {
     }
 }
 
-
-# Install Windows updates
-Start-LoggedJob -JobName "Install Windows Updates" -ScriptBlock {
-    try {
-        Set-Service -Name wuauserv -StartupType Automatic
-        Write-Host "Installing Windows updates..."
-        Start-Sleep -Seconds 60
-
-        $maxRetries = 3
-        $retryCount = 0
-        $success = $false
-
-        while (-not $success -and $retryCount -lt $maxRetries) {
-            try {
-                Install-WindowsUpdate -AcceptAll -Install
-                Write-Host "--------------------------------------------------------------------------------"
-                Write-Host "Windows updates installed."
-                Write-Host "--------------------------------------------------------------------------------"
-                $success = $true
-            } catch {
-                $retryCount++
-                Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-                Write-Host "An error occurred while installing Windows updates: $_"
-                Write-Host "Retrying... ($retryCount/$maxRetries)"
-                Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-                Start-Sleep -Seconds 60
-            }
-        }
-
-        if (-not $success) {
-            Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-            Write-Host "Failed to install Windows updates after $maxRetries attempts."
-            Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-        }
-    } catch {
-        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-        Write-Host "An unexpected error occurred: $_"
-        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-    }
-}
-
 # Secure and backup DNS to ccdc folder NOTE TO SELF: figure out how to restore
 # Start-LoggedJob -JobName "Secure and Backup DNS" -ScriptBlock { back up manually
 #     try {
@@ -383,43 +345,43 @@ Start-LoggedJob -JobName "Install Windows Updates" -ScriptBlock {
 #     }
 # }
 
-# Lockdown the CCDC folder
-Start-LoggedJob -JobName "Lockdown CCDC Folder" -ScriptBlock {
-    try {
-        $ccdcPath = "C:\CCDC"
-        $acl = Get-Acl $ccdcPath
-        $acl.SetAccessRuleProtection($true, $false)
+# # Lockdown the CCDC folder
+# Start-LoggedJob -JobName "Lockdown CCDC Folder" -ScriptBlock {
+#     try {
+#         $ccdcPath = "C:\CCDC"
+#         $acl = Get-Acl $ccdcPath
+#         $acl.SetAccessRuleProtection($true, $false)
         
-        # Remove existing access rules
-        $acl.Access | ForEach-Object { $acl.RemoveAccessRule($_) }
+#         # Remove existing access rules
+#         $acl.Access | ForEach-Object { $acl.RemoveAccessRule($_) }
         
-        # Add full control for necessary system accounts
-        $adminUser = [System.Security.Principal.NTAccount]"Administrator"
-        $systemUser = [System.Security.Principal.NTAccount]"SYSTEM"
-        $trustedInstaller = [System.Security.Principal.NTAccount]"NT SERVICE\TrustedInstaller"
-        $currentUser = [System.Security.Principal.NTAccount]::new([System.Security.Principal.WindowsIdentity]::GetCurrent().Name)
+#         # Add full control for necessary system accounts
+#         $adminUser = [System.Security.Principal.NTAccount]"Administrator"
+#         $systemUser = [System.Security.Principal.NTAccount]"SYSTEM"
+#         $trustedInstaller = [System.Security.Principal.NTAccount]"NT SERVICE\TrustedInstaller"
+#         $currentUser = [System.Security.Principal.NTAccount]::new([System.Security.Principal.WindowsIdentity]::GetCurrent().Name)
         
-        $adminRule = New-Object System.Security.AccessControl.FileSystemAccessRule($adminUser, "FullControl", "Allow")
-        $systemRule = New-Object System.Security.AccessControl.FileSystemAccessRule($systemUser, "FullControl", "Allow")
-        $trustedInstallerRule = New-Object System.Security.AccessControl.FileSystemAccessRule($trustedInstaller, "FullControl", "Allow")
-        $currentUserRule = New-Object System.Security.AccessControl.FileSystemAccessRule($currentUser, "FullControl", "Allow")
+#         $adminRule = New-Object System.Security.AccessControl.FileSystemAccessRule($adminUser, "FullControl", "Allow")
+#         $systemRule = New-Object System.Security.AccessControl.FileSystemAccessRule($systemUser, "FullControl", "Allow")
+#         $trustedInstallerRule = New-Object System.Security.AccessControl.FileSystemAccessRule($trustedInstaller, "FullControl", "Allow")
+#         $currentUserRule = New-Object System.Security.AccessControl.FileSystemAccessRule($currentUser, "FullControl", "Allow")
         
-        $acl.AddAccessRule($adminRule)
-        $acl.AddAccessRule($systemRule)
-        $acl.AddAccessRule($trustedInstallerRule)
-        $acl.AddAccessRule($currentUserRule)
+#         $acl.AddAccessRule($adminRule)
+#         $acl.AddAccessRule($systemRule)
+#         $acl.AddAccessRule($trustedInstallerRule)
+#         $acl.AddAccessRule($currentUserRule)
         
-        # Apply the modified ACL to the CCDC folder
-        Set-Acl -Path $ccdcPath -AclObject $acl
-        Write-Host "--------------------------------------------------------------------------------"
-        Write-Host "CCDC folder lockdown complete."
-        Write-Host "--------------------------------------------------------------------------------"
-    } catch {
-        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-        Write-Host "An error occurred while locking down the CCDC folder: $_"
-        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-    }
-}
+#         # Apply the modified ACL to the CCDC folder
+#         Set-Acl -Path $ccdcPath -AclObject $acl
+#         Write-Host "--------------------------------------------------------------------------------"
+#         Write-Host "CCDC folder lockdown complete."
+#         Write-Host "--------------------------------------------------------------------------------"
+#     } catch {
+#         Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+#         Write-Host "An error occurred while locking down the CCDC folder: $_"
+#         Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+#     }
+# }
 
 # Block credential dumping
 Start-LoggedJob -JobName "Block Credential Dumping" -ScriptBlock {
@@ -531,18 +493,13 @@ Start-LoggedJob -JobName "Disable PowerShell Remoting" -ScriptBlock {
         # Disable PSRemoting
         Disable-PSRemoting -Force
 
-        # Stop and disable the WinRM service
-        Stop-Service -Name WinRM -Force
-        Set-Service -Name WinRM -StartupType Disabled
-
         # Delete the listener that accepts requests on any IP address
         winrm delete winrm/config/Listener?Address=*+Transport=HTTP
         winrm delete winrm/config/Listener?Address=*+Transport=HTTPS
 
-        # Disable the firewall exceptions for WS-Management communications
-        Set-NetFirewallRule -Name "WINRM-HTTP-In-TCP" -Enabled False
-        Set-NetFirewallRule -Name "WINRM-HTTPS-In-TCP" -Enabled False
-
+        # Stop and disable the WinRM service
+        Stop-Service -Name WinRM -Force
+        Set-Service -Name WinRM -StartupType Disabled
         # Restore the value of the LocalAccountTokenFilterPolicy to 0
         $regPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System"
         Set-ItemProperty -Path $regPath -Name "LocalAccountTokenFilterPolicy" -Value 0
@@ -618,7 +575,7 @@ Start-LoggedJob -JobName "Patch Mimikatz" -ScriptBlock {
 Start-LoggedJob -JobName "Patch DCSync Vulnerability" -ScriptBlock {
     try {
         Import-Module ActiveDirectory
-        $permissions = Get-ACL "AD:\DC=domain,DC=com" | Select-Object -ExpandProperty Access
+        $permissions = Get-ACL "AD:\$((Get-ADDomain))" | Select-Object -ExpandProperty Access
         $criticalPermissions = $permissions | Where-Object { $_.ObjectType -eq "19195a5b-6da0-11d0-afd3-00c04fd930c9" -or $_.ObjectType -eq "4c164200-20c0-11d0-a768-00aa006e0529" }
         foreach ($permission in $criticalPermissions) {
             if ($permission.ActiveDirectoryRights -match "Replicating Directory Changes") {
@@ -626,7 +583,7 @@ Start-LoggedJob -JobName "Patch DCSync Vulnerability" -ScriptBlock {
                 $permissions.RemoveAccessRule($permission)
             }
         }
-        Set-ACL -Path "AD:\DC=domain,DC=com" -AclObject $permissions
+        Set-ACL -Path "AD:\$((Get-ADDomain))" -AclObject $permissions
         Write-Host "--------------------------------------------------------------------------------"
         Write-Host "DCSync vulnerability patched."
         Write-Host "--------------------------------------------------------------------------------"
@@ -640,23 +597,9 @@ Start-LoggedJob -JobName "Patch DCSync Vulnerability" -ScriptBlock {
 ## Make sure the only SMB allowed is SMBv2 (we hate SMBv1)
 Start-LoggedJob -JobName "Upgrade SMB" -ScriptBlock {
     try {
-        $smbv1Enabled = (Get-SmbServerConfiguration).EnableSMB1Protocol
-        $smbv2Enabled = (Get-SmbServerConfiguration).EnableSMB2Protocol
-        $restart = $false
-
-        if ($smbv1Enabled -eq $true) {
-            Set-SmbServerConfiguration -EnableSMB1Protocol $false -Force
-            $restart = $true
-        }
-
-        if ($smbv2Enabled -eq $false) {
-            Set-SmbServerConfiguration -EnableSMB2Protocol $true -Force
-            $restart = $true
-        }
-
-        if ($restart -eq $true) {
-            Write-Host "Please consider restarting the machine for changes to take effect."
-        }
+        Set-SmbServerConfiguration -EnableSMB1Protocol $false -Force
+        Set-SmbServerConfiguration -EnableSMB2Protocol $true -Force
+        
         Write-Host "--------------------------------------------------------------------------------"
         Write-Host "SMB upgraded."
         Write-Host "--------------------------------------------------------------------------------"
