@@ -14,8 +14,8 @@ Write-Host "| |/ |/ / / / / / /_/ / /_/ / |/ |/ (__  )  / /___/ /  __/ /_/ / / /
 Write-Host "|__/|__/_/_/ /_/\__,_/\____/|__/|__/____/   \____/_/\___/\__,_/_/ /_/\___/_/  "
 
 $site = "UWStout-CCDC/windows" # Change when changing repo
-Create-Item -Path "C:\CCDC" -ItemType Directory
-Create-Item -Path "C:\CCDC\tools-Windows" -ItemType Directory
+New-Item -Path "C:\CCDC" -ItemType Directory
+New-Item -Path "C:\CCDC\tools-Windows" -ItemType Directory
 
 ## Clear persistence and document it ##
 
@@ -327,48 +327,6 @@ Start-LoggedJob -JobName "Remove Unnecessary Network Shares" -ScriptBlock {
     }
 }
 
-
-# Install Windows updates
-Start-LoggedJob -JobName "Install Windows Updates" -ScriptBlock {
-    try {
-        Set-Service -Name wuauserv -StartupType Automatic
-        Write-Host "Installing Windows updates..."
-        Start-Sleep -Seconds 60
-
-        $maxRetries = 3
-        $retryCount = 0
-        $success = $false
-
-        while (-not $success -and $retryCount -lt $maxRetries) {
-            try {
-                Install-WindowsUpdate -AcceptAll -Install
-                Write-Host "--------------------------------------------------------------------------------"
-                Write-Host "Windows updates installed."
-                Write-Host "--------------------------------------------------------------------------------"
-                $success = $true
-            } catch {
-                $retryCount++
-                Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-                Write-Host "An error occurred while installing Windows updates: $_"
-                Write-Host "Retrying... ($retryCount/$maxRetries)"
-                Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-                Start-Sleep -Seconds 60
-            }
-        }
-
-        if (-not $success) {
-            Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-            Write-Host "Failed to install Windows updates after $maxRetries attempts."
-            Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-        }
-    } catch {
-        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-        Write-Host "An unexpected error occurred: $_"
-        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-    }
-}
-
-
 # Lockdown the CCDC folder
 #Start-LoggedJob -JobName "Lockdown CCDC Folder" -ScriptBlock {
 #    try {
@@ -518,13 +476,13 @@ Start-LoggedJob -JobName "Disable PowerShell Remoting" -ScriptBlock {
         # Disable PSRemoting
         Disable-PSRemoting -Force
 
+         # Delete the listener that accepts requests on any IP address
+        winrm delete winrm/config/Listener?Address=*+Transport=HTTP
+        winrm delete winrm/config/Listener?Address=*+Transport=HTTPS
+
         # Stop and disable the WinRM service
         Stop-Service -Name WinRM -Force
         Set-Service -Name WinRM -StartupType Disabled
-
-        # Delete the listener that accepts requests on any IP address
-        winrm delete winrm/config/Listener?Address=*+Transport=HTTP
-        winrm delete winrm/config/Listener?Address=*+Transport=HTTPS
 
         # Disable the firewall exceptions for WS-Management communications
         Set-NetFirewallRule -Name "WINRM-HTTP-In-TCP" -Enabled False
@@ -607,22 +565,8 @@ Start-LoggedJob -JobName "Patch Mimikatz" -ScriptBlock {
 ## Make sure the only SMB allowed is SMBv2 (we hate SMBv1) !!!BROKEN!!!
 Start-LoggedJob -JobName "Upgrade SMB" -ScriptBlock {
     try {
-        $smbv1Enabled = (Get-SmbServerConfiguration).EnableSMB1Protocol
-        $smbv2Enabled = (Get-SmbServerConfiguration).EnableSMB2Protocol
-        $restart = $false
-        if ($smbv1Enabled -eq $true) {
-            Set-SmbServerConfiguration -EnableSMB1Protocol $false -Force
-            $restart = $true
-        }
-
-        if ($smbv2Enabled -eq $false) {
-            Set-SmbServerConfiguration -EnableSMB2Protocol $true -Force
-            $restart = $true
-        }
-
-        if ($restart -eq $true) {
-            Write-Host "Please consider restarting the machine for changes to take effect."
-        }
+        Set-SmbServerConfiguration -EnableSMB1Protocol $false -Force
+        Set-SmbServerConfiguration -EnableSMB2Protocol $true -Force
         Write-Host "--------------------------------------------------------------------------------"
         Write-Host "SMB upgraded."
         Write-Host "--------------------------------------------------------------------------------"
