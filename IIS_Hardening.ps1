@@ -94,36 +94,6 @@ try {
 }
 
 
-# Rotate Kerberos account password
-try {
-    $count = 0;
-    while ($count -lt 3) {
-        Write-Host "Rotating Kerberos account password..."
-        $letterNumberArray = @('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '1', '2', '3', '4', '5', '6', '7', '8','9','0', '!', '@', '#', '$', '%', '^', '&', '*')
-        for(($counter=0); $counter -lt 20; $counter++)
-        {
-        $randomCharacter = get-random -InputObject $letterNumberArray
-        $password = $randomString + $randomCharacter
-        }
-
-        $krbtgt = Get-LocalUser -Name "krbtgt"
-        Set-LocalUser -Name $krbtgt -Password $password
-    }
-    
-    Write-Host "--------------------------------------------------------------------------------"
-    Write-Host "Kerberos account password rotated successfully."
-    Write-Host "--------------------------------------------------------------------------------"
-} catch {
-    Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-    Write-Host "An error occurred while rotating Kerberos password: $_"
-    Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-}
-
-# Create directories
-$ccdcPath = "C:\CCDC"
-mkdir $ccdcPath 
-mkdir "$ccdcPath\DNS"
-
 # Download the GPO script
 # We will uncomment this section once we find working GPOs
 # $scriptPath = "$toolsPath\GPOs.ps1"
@@ -153,11 +123,6 @@ if (-not (Get-Module -ListAvailable -Name PSWindowsUpdate)) {
 }
 
 Import-Module -Name PSWindowsUpdate
-
-# Print out all DNS zones
-Get-DNSServerZone
-# Ask the user for the DNS zone
-$zone = Read-Host "Enter the DNS zone used by the scoring engine"
 
 # Initialize the global jobs array
 $global:jobs = @()
@@ -403,59 +368,45 @@ Start-LoggedJob -JobName "Install Windows Updates" -ScriptBlock {
     }
 }
 
-# Secure and backup DNS to ccdc folder NOTE TO SELF: figure out how to restore
-Start-LoggedJob -JobName "Secure and Backup DNS" -ScriptBlock {
-    try {
-        dnscmd.exe /Config /SocketPoolSize 10000
-        dnscmd.exe /Config /CacheLockingPercent 100
-        dnscmd.exe /ZoneExport $zone "$ccdcPath\DNS\$zone.dns"
-        Write-Host "--------------------------------------------------------------------------------"
-        Write-Host "DNS secured and backed up."
-        Write-Host "--------------------------------------------------------------------------------"
-    } catch {
-        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-        Write-Host "An error occurred while securing and backing up DNS: $_"
-        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-    }
-}
 
 # Lockdown the CCDC folder
-Start-LoggedJob -JobName "Lockdown CCDC Folder" -ScriptBlock {
-    try {
-        $ccdcPath = "C:\CCDC"
-        $acl = Get-Acl $ccdcPath
-        $acl.SetAccessRuleProtection($true, $false)
-        
+#Start-LoggedJob -JobName "Lockdown CCDC Folder" -ScriptBlock {
+#    try {
+#        $ccdcPath = "C:\CCDC"
+#        $acl = Get-Acl $ccdcPath
+#        $acl.SetAccessRuleProtection($true, $false)
+#        
         # Remove existing access rules
-        $acl.Access | ForEach-Object { $acl.RemoveAccessRule($_) }
+#        $acl.Access | ForEach-Object { $acl.RemoveAccessRule($_) }
         
         # Add full control for necessary system accounts
-        $adminUser = [System.Security.Principal.NTAccount]"Administrator"
-        $systemUser = [System.Security.Principal.NTAccount]"SYSTEM"
-        $trustedInstaller = [System.Security.Principal.NTAccount]"NT SERVICE\TrustedInstaller"
-        $currentUser = [System.Security.Principal.NTAccount]::new([System.Security.Principal.WindowsIdentity]::GetCurrent().Name)
+#       $adminUser = [System.Security.Principal.NTAccount]"Administrator"
+#        $systemUser = [System.Security.Principal.NTAccount]"SYSTEM"
+#        $trustedInstaller = [System.Security.Principal.NTAccount]"NT SERVICE\TrustedInstaller"
+#        $currentUser = [System.Security.Principal.NTAccount]::new([System.Security.Principal.WindowsIdentity]::GetCurrent().Name)
         
-        $adminRule = New-Object System.Security.AccessControl.FileSystemAccessRule($adminUser, "FullControl", "Allow")
-        $systemRule = New-Object System.Security.AccessControl.FileSystemAccessRule($systemUser, "FullControl", "Allow")
-        $trustedInstallerRule = New-Object System.Security.AccessControl.FileSystemAccessRule($trustedInstaller, "FullControl", "Allow")
-        $currentUserRule = New-Object System.Security.AccessControl.FileSystemAccessRule($currentUser, "FullControl", "Allow")
+#        $adminRule = New-Object System.Security.AccessControl.FileSystemAccessRule($adminUser, "FullControl", "Allow")
+#        $systemRule = New-Object System.Security.AccessControl.FileSystemAccessRule($systemUser, "FullControl", "Allow")
+#        $trustedInstallerRule = New-Object System.Security.AccessControl.FileSystemAccessRule($trustedInstaller, "FullControl", "Allow")
+#        $currentUserRule = New-Object System.Security.AccessControl.FileSystemAccessRule($currentUser, "FullControl", "Allow")
         
-        $acl.AddAccessRule($adminRule)
-        $acl.AddAccessRule($systemRule)
-        $acl.AddAccessRule($trustedInstallerRule)
-        $acl.AddAccessRule($currentUserRule)
+#        $acl.AddAccessRule($adminRule)
+#        $acl.AddAccessRule($systemRule)
+#        $acl.AddAccessRule($trustedInstallerRule)
+#        $acl.AddAccessRule($currentUserRule)
         
         # Apply the modified ACL to the CCDC folder
-        Set-Acl -Path $ccdcPath -AclObject $acl
-        Write-Host "--------------------------------------------------------------------------------"
-        Write-Host "CCDC folder lockdown complete."
-        Write-Host "--------------------------------------------------------------------------------"
-    } catch {
-        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-        Write-Host "An error occurred while locking down the CCDC folder: $_"
-        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-    }
-}
+#       Set-Acl -Path $ccdcPath -AclObject $acl
+#        Write-Host "--------------------------------------------------------------------------------"
+#        Write-Host "CCDC folder lockdown complete."
+#        Write-Host "--------------------------------------------------------------------------------"
+#    }
+#    catch {
+#        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+#        Write-Host "An error occurred while locking down the CCDC folder: $_"
+#        Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+#    }
+#}
 
 # Block credential dumping
 Start-LoggedJob -JobName "Block Credential Dumping" -ScriptBlock {
@@ -653,13 +604,12 @@ Start-LoggedJob -JobName "Patch Mimikatz" -ScriptBlock {
 
 
 
-## Make sure the only SMB allowed is SMBv2 (we hate SMBv1)
+## Make sure the only SMB allowed is SMBv2 (we hate SMBv1) !!!BROKEN!!!
 Start-LoggedJob -JobName "Upgrade SMB" -ScriptBlock {
     try {
         $smbv1Enabled = (Get-SmbServerConfiguration).EnableSMB1Protocol
         $smbv2Enabled = (Get-SmbServerConfiguration).EnableSMB2Protocol
         $restart = $false
-
         if ($smbv1Enabled -eq $true) {
             Set-SmbServerConfiguration -EnableSMB1Protocol $false -Force
             $restart = $true
