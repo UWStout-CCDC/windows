@@ -2,6 +2,8 @@ $Host.UI.RawUI.ForegroundColor = "DarkGreen"
 $Host.UI.RawUI.BackgroundColor = "Black"
 Clear-Host
 
+# add eventlook, https://www.binisoft.org/wfc
+
 Write-Host "Installer Script"
 
 # Download necessary tools

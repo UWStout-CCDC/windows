@@ -69,8 +69,8 @@ if ($proc.ExitCode -eq 0) {
 }
 
 # ── 4. Install winget (Microsoft.DesktopAppInstaller) ────────────────────────
-Write-Status "Fetching latest winget release from GitHub..."
-$releases  = Invoke-RestMethod -Uri "https://api.github.com/repos/microsoft/winget-cli/releases/latest"
+Write-Status "Fetching latest winget release"
+$releases  = Invoke-RestMethod -Uri " aka.ms/winget"
 $msixBundle = $releases.assets | Where-Object { $_.name -match "\.msixbundle$" } |
               Select-Object -First 1
 
