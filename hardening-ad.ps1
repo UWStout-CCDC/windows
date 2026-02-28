@@ -616,3 +616,17 @@ while ($jobs.Count -gt 0) {
     }
     Start-Sleep -Seconds 5
 }
+
+# Install winget
+try {
+    Write-Host "Installing winget..."
+    Install-Script -Name winget-install
+    winget-install
+    Write-Host "--------------------------------------------------------------------------------"
+    Write-Host "Winget installation complete."
+    Write-Host "--------------------------------------------------------------------------------"
+} catch {
+    Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+    Write-Host "An error occurred while installing winget: $_"
+    Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+}
