@@ -529,12 +529,12 @@ Start-LoggedJob -JobName "Configure Windows Defender Exploit Guard" -ScriptBlock
         
         Write-Host "--------------------------------------------------------------------------------"
         Write-Host "Windows Defender Exploit Guard configured."
-        Write-Host "-------------------------------------------------------------DCSy-------------------"
+        Write-Host "--------------------------------------------------------------------------------"
     } catch {
         Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
         Write-Host "An error occurred while configuring Windows Defender Exploit Guard: $_"
         Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-    }DCSy
+    }
 }
 # Start-LoggedJob -JobName "Enable Windows Defender Credential Guard" -ScriptBlock {
 #     try {
