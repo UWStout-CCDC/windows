@@ -18,6 +18,7 @@ New-Item -Path "C:\CCDC" -ItemType Directory
 New-Item -Path "C:\CCDC\tools-Windows" -ItemType Directory
 New-Item -Path "C:\CCDC\DNS" -ItemType Directory
 $ccdcPath = "C:\CCDC"
+$env:Path += ";C:\CCDC"
 
 # ## Clear persistence and document it ##
 
