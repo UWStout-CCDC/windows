@@ -29,9 +29,33 @@ winget install Mozilla.Firefox -e --silent
 winget install WiresharkFoundation.Wireshark -e --silent
 winget install Microsoft.Sysinternals.Suite -e --silent
 
-Start-Job -ScriptBlock {
-    $npcapInstallerPath = "C:\CCDC\npcap-1.80.exe"
-    Write-Host "Installing NPCAP..."
-    Start-Process -FilePath $npcapInstallerPath -Wait
-}
+# NPCAP
+$npcapInstallerPath = "C:\CCDC\npcap-1.80.exe"
+Write-Host "Installing NPCAP..."
+Start-Process -FilePath $npcapInstallerPath -Wait
 
+# Eventlook
+Write-Host "Installing Eventlook..."
+Expand-Archive -Path "C:\CCDC\EventLook-bin-18e54c9.zip" -DestinationPath "C:\CCDC\tools-Windows\EventLook" -Force
+
+
+# Firewall Control
+$firewallControlInstallerPath = "C:\CCDC\wfc6setup.exe"
+Write-Host "Installing Firewall Control..."
+$release = Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full" -Name Release | Select-Object -ExpandProperty Release
+
+if ($release -ge 528040) {
+    Start-BitsTransfer -Source "https://go.microsoft.com/fwlink/?LinkId=2085155" -Destination "C:\CCDC\dotnet-runtime.exe"
+    Start-Process -FilePath "C:\CCDC\dotnet-runtime.exe" -Wait
+} else {
+    # do nothing
+}
+Start-Process -FilePath $firewallControlInstallerPath -Wait
+
+$eventlookPath = "C:\CCDC\tools-Windows\EventLook\x64\Release\net8.0-windows10.0.17763\win-x64\EventLook.exe"
+$desktopPath = [System.Environment]::GetFolderPath('Desktop')
+$WScriptObj = New-Object -ComObject ("WScript.Shell")
+$shortcutFile = Join-Path -Path $desktopPath -ChildPath Eventlook.Lnk
+$shortcut = $WScriptObj.CreateShortcut($shortcutFile)
+$shortcut.TargetPath = $eventlookPath
+$shortcut.Save()

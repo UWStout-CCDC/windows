@@ -18,6 +18,7 @@ New-Item -Path "C:\CCDC" -ItemType Directory
 New-Item -Path "C:\CCDC\tools-Windows" -ItemType Directory
 New-Item -Path "C:\CCDC\DNS" -ItemType Directory
 $ccdcPath = "C:\CCDC"
+$env:Path += ";C:\CCDC"
 
 # ## Clear persistence and document it ##
 
@@ -529,12 +530,12 @@ Start-LoggedJob -JobName "Configure Windows Defender Exploit Guard" -ScriptBlock
         
         Write-Host "--------------------------------------------------------------------------------"
         Write-Host "Windows Defender Exploit Guard configured."
-        Write-Host "-------------------------------------------------------------DCSy-------------------"
+        Write-Host "--------------------------------------------------------------------------------"
     } catch {
         Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
         Write-Host "An error occurred while configuring Windows Defender Exploit Guard: $_"
         Write-Host "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-    }DCSy
+    }
 }
 # Start-LoggedJob -JobName "Enable Windows Defender Credential Guard" -ScriptBlock {
 #     try {
